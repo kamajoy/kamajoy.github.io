@@ -1,1 +1,117 @@
-<h2>this is index.html page</h2>
+<!DOCTYPE html><html><head><title>git use</title><meta charset='utf-8'><link href='./marxico.css' rel='stylesheet'><style>
+.note-content  {font-family: 'Helvetica Neue', Arial, 'Hiragino Sans GB', STHeiti, 'Microsoft YaHei', 'WenQuanYi Micro Hei', SimSun, Song, sans-serif;}
+
+</style></head><body><div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="git-use">git use</h3>
+
+
+
+<h5 id="初始化参数">初始化参数</h5>
+
+<blockquote>
+  <p>git config –global user.name “你的名字” <br>
+  git config –global user.email “你的邮箱地址”</p>
+</blockquote>
+
+
+
+<h5 id="ssh-key生成">SSH key生成</h5>
+
+<blockquote>
+  <p>ssh-keygen -t rsa -C “你的邮箱地址”</p>
+</blockquote>
+
+
+
+<h5 id="检出分之">检出分之</h5>
+
+<blockquote>
+  <p>git branch -r  查看所有分支列表 <br>
+  git clone uri  分之名称(为空时默认master)   检出某个分支所有代码</p>
+</blockquote>
+
+
+
+<h5 id="更新代码">更新代码</h5>
+
+<blockquote>
+  <p>git pull <br>
+  git status  <br>
+  git log</p>
+</blockquote>
+
+
+
+<h5 id="切换分支">切换分支</h5>
+
+<blockquote>
+  <p>git checkout 分支名称</p>
+</blockquote>
+
+
+
+<h5 id="查看当前分支所在位置">查看当前分支所在位置</h5>
+
+<blockquote>
+  <p>git branch</p>
+</blockquote>
+
+
+
+<h5 id="提交代码">提交代码</h5>
+
+<blockquote>
+  <p>git status <br>
+  git add xxx.java  or git add  .  或者使用  git add -a <br>
+   git commit -m “本次修改的备注，如修改了用户头像不展示问题” <br>
+   git push -u origin master</p>
+</blockquote>
+
+
+
+<h4 id="撤销">撤销</h4>
+
+<blockquote>
+  <p>git reset –hard HEAD  回到上次提交的状态 <br>
+   git revert HEAD^  回到上上次提交的状态 <br>
+   git reset  file_name 单个文件回到上次提交的状态 <br>
+   git checkout file_name 恢复远程的状态</p>
+</blockquote>
+
+<h5 id="创建分支">创建分支</h5>
+
+<blockquote>
+  <p>git mastert <br>
+  git checkout -b test  从master分支上创建了一个test分支 <br>
+  git push origin test 将test分支推送到远程服务器</p>
+</blockquote>
+
+
+
+<h5 id="分支合并">分支合并</h5>
+
+<blockquote>
+  <p>git checkout master  <br>
+  git merge test   将test分支合并到master <br>
+  git push -u origin master  合并之后推送</p>
+</blockquote>
+
+
+
+<h5 id="log">log</h5>
+
+<blockquote>
+  <p>git log 查看提交历史记录 <br>
+  git log –oneline  或者 git log –pretty=oneline 以精简模式显示 <br>
+  git log –graph 以图形模式显示 <br>
+  git log –stat 显示文件更改列表 <br>
+  git log –author= ‘name’ 显示某个作者的日志 <br>
+  git log -p filepath 查看某个文件的详细修改 <br>
+  git log -L start,end:filepath 查看某个文件某几行范围内的修改记录 <br>
+   git log –stat commitId  或者 git show –stat commitId 查看某一次提交的文件修改列表  </p>
+</blockquote></div></body></html>
