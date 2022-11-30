@@ -29,6 +29,7 @@
   
 <h5 id="awk统计排行榜">统计排行榜</h5>
 cat data.log |sort | uniq -c | sort -nr | head -n 50
+cat data.log  | sort -n |uniq -c | sort -rn | head -n 100  
 
 <h5 id="awk输出函数print">awk输出函数：print</h5>
 
