@@ -262,6 +262,7 @@ seq 9 | sed 'H;g' | awk -v RS='' '{for(i=1;i<=NF;i++)printf("%dx%d=%d%s", i, NR,
 
 ### 打印每一重复行出现的次数,“uniq -c”表示标记出重复数量
 	cat access_log | awk '{print $1}'| sort | uniq -c
+	cat access_log | awk '{print $1}' | sort -n |uniq -c | sort -rn | head -n 100
 
 ## Curl 使用
 
