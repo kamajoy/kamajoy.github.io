@@ -13,6 +13,12 @@ kubens
 kubectl get nodes
 ```
 
+###### 列出集群中的所有命名空间
+```sh
+kubectl get ns
+```
+
+
 ###### 查看当前空间的所有 Pods
 ```sh
 kubectl get pods # 当前空间 pod
