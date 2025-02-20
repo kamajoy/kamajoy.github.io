@@ -15,12 +15,14 @@ kubectl get nodes
 
 ###### 查看当前空间的所有pods
 ```doc
-kubectl get pods
+kubectl get pods #当前空间pod
+kubectl get pods -A  #所有空间pod
 ```
 
 ###### 查看当前空间的所有service
 ```doc
-kubectl get sec 
+kubectl get svc #当前命名空间（Namespace）中的 Service
+kubectl get svc -A  #显示所有命名空间中的 Service
 ```
 
 ###### 当前空间的所有ingress
@@ -36,9 +38,25 @@ kubectl logs -f <pod name>
 
 ###### 查看资源
 ```doc
-kubectl get deployments #查看所有 Deployment名称
-kubectl get deployment <pod name> -o yaml # 获取 Deployment 资源定义 
-kubectl describe deployment <pod name> # 获取 Deployment 详细信息
+Pod:
+kubectl get pods  #当前空间pod
+kubectl get pods -A  # 获取所有命名空间的 Pod
+kubectl get pods -n <namespace>  # 获取特定命名空间的 Pod
+kubectl describe pod <pod_name> #当前空间的pod明细
+kubectl describe pod <pod_name> -n <namespace> #指定空间的pod明细
+kubectl get pod <pod_name> -o yaml # 获取 Pod 的 YAML 资源定义
+
+Deployments:
+kubectl get deployments #查看所有 deployment 名称，等同于命令 kubectl get deploy
+kubectl get deployments #查看所有空间下的deployment
+kubectl get deployment <deployment name> -o yaml # 获取 Deployment 资源定义 
+kubectl describe deployment <deployment name> # 获取 Deployment 详细信息
+
+Service:
+kubectl get service <service_name> -o yaml  # 获取 service 资源定义
+kubectl describe service <service_name>  # 获取 service 详细信息
+
+
 ```
 
 
