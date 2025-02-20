@@ -77,6 +77,27 @@ kubectl get cronjob -A | fzf #查找指定的名称
 kubectl get job -n <namespace>  # 查看指定命名空间的 Job
 kubectl get job <job-name> -o yaml -n <namespace>  #查看yaml资源
 
+Ingress:
+kubectl get ingress
+kubectl get ingress -A
+kubectl get ingress <ingress-name> -o yaml -n <namespace>  #查看yaml资源
+kubectl describe ingress <ingress-name> -n <namespace>  查看特定 Ingress 详情
+
+
+ConfigMap：
+kubectl get secrets  # 查看当前命名空间的所有 Secrets
+kubectl get secrets -A  # 查看所有命名空间的 Secrets
+kubectl get secret <secret-name> -o yaml -n <namespace>  # 查看特定 Secret 的 YAML 资源定义
+kubectl describe secret <secret-name> -n <namespace>  # 查看 Secret 详情
+
+
+Secrets：
+kubectl get secrets  # 查看当前命名空间的所有 Secrets
+kubectl get secrets -A  # 查看所有命名空间的 Secrets
+kubectl get secret <secret-name> -o yaml -n <namespace>  # 查看特定 Secret 的 YAML 资源定义
+kubectl describe secret <secret-name> -n <namespace>  # 查看 Secret 详情
+
+
 
 ```
 
