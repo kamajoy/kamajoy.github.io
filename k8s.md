@@ -16,6 +16,11 @@ kubectl get nodes
 ###### 列出集群中的所有命名空间
 ```sh
 kubectl get ns
+kubectl create ns <namespace>
+kubectl create namespace <namespace>
+kubectl delete ns <namespace>
+kubectl delete namespace <namespace>
+
 ```
 
 
