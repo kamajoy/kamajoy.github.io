@@ -5,11 +5,14 @@
 - 图标： Material Icon Theme
 - 主题：Dracula Theme Official
 - 运行代码：Code Runner
-- 代码格式化神器：Prettier
+- 代码格式化：Prettier
 - 代码补齐AI：Codeium（免费），MarsCode AI
 - 前端代码工具：ESLint
 - 代码中显示git修改信息：GitLens
 - Go扩展：Go
+- vue: Vue - Official
+- 字体： https://github.com/tonsky/FiraCode?tab=readme-ov-file
+- 缩进：Indent Rainbow
 
 自动格式化代码：    "editor.formatOnSave": true,"[go]": {xxxx},如下：
 setting json配置：
@@ -38,6 +41,8 @@ setting json配置：
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   },
+  "go.formatTool": "gofmt",
+  "go.lintTool": "golint",
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
@@ -49,7 +54,17 @@ setting json配置：
     "typescriptreact",
     "vue"
   ],
-  "workbench.colorTheme": "Dracula Theme"
+  "workbench.colorTheme": "Dracula Theme",
+  "editor.fontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "indentRainbow.colors": [
+    "rgba(255, 69, 0, 0.5)", // 橙色
+    "rgba(50, 205, 50, 0.5)", // 绿色
+    "rgba(30, 144, 255, 0.5)", // 蓝色
+    "rgba(255, 215, 0, 0.5)" // 黄色
+  ]
 }
-
 ```
