@@ -59,12 +59,6 @@ setting json配置：
   "editor.fontLigatures": true,
   "editor.quickSuggestions": {
     "strings": true
-  },
-  "indentRainbow.colors": [
-    "rgba(255, 69, 0, 0.5)", // 橙色
-    "rgba(50, 205, 50, 0.5)", // 绿色
-    "rgba(30, 144, 255, 0.5)", // 蓝色
-    "rgba(255, 215, 0, 0.5)" // 黄色
-  ]
+  }
 }
 ```
