@@ -13,6 +13,7 @@
 - vue: Vue - Official
 - 字体： https://github.com/tonsky/FiraCode?tab=readme-ov-file
 - 缩进：Indent Rainbow
+- ssh: Remote - SSH
 
 自动格式化代码：    "editor.formatOnSave": true,"[go]": {xxxx},如下：
 setting json配置：
