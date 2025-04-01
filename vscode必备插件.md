@@ -1,5 +1,5 @@
 ### vscode必备插件
-
+   备份信息见： https://github.com/kamajoy/kamajoy.github.io/tree/master/vscode%E5%A4%87%E4%BB%BD%E7%9B%AE%E5%BD%95
 
 - 中文版插件: Chinese
 - 图标： Material Icon Theme
