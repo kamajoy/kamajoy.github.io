@@ -13,3 +13,8 @@ VS Code 会检测到 extensions.json
 右下角弹出提示"此工作区有扩展建议"，点击"全部安装"即可批量安装
 也可以手动点击"显示建议"查看列表
 ```
+
+### 安装依赖软件
+```
+brew install clang-format
+```
