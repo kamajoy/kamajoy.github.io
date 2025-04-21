@@ -17,7 +17,7 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[vue]": {
-    "editor.defaultFormatter": "Vue.volar"
+    //"editor.defaultFormatter": "Vue.volar"
   },
   "[go]": {
     "editor.defaultFormatter": "golang.go"
@@ -29,16 +29,48 @@
   },
   "editor.fontSize": 11,
   "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact",
-    "vue"
+    // "javascript",
+    //"javascriptreact",
+    //"typescript",
+    //"typescriptreact",
+    //"vue"
   ],
   "workbench.colorTheme": "Dracula Theme",
+  "workbench.editor.wrapTabs": true, //文件标签是否换行
   "editor.fontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
   "editor.fontLigatures": true,
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+  "go.toolsManagement.autoUpdate": true,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[php]": {
+    //"editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  "[proto3]": {
+    "editor.defaultFormatter": "zxh404.vscode-proto3"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "marscode.codeCompletionPro": {},
+  "trae.codeCompletionPro": {
+    "enableCodeCompletionPro": true
+  },
+  "trae.enableCodelens": {
+    "enableInlineDocumentation": false,
+    "enableInlineUnitTest": false,
+    "enableInlineExplain": false
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false,
+    "go": true
+  },
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "codeium.enableCodeLens": false
 }
