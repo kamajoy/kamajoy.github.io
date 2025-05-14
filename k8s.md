@@ -23,6 +23,15 @@ kubectl delete namespace <namespace>
 
 ```
 
+##### 搜索
+```sh
+kubectl get all -n  <namespace> 用于查看指定命名空间（namespace）中几乎所有类型的资源
+kubectl get all -A 查看所有命名空间的资源
+kubectl get pods,services -n <namespace>  查看特定资源类型
+kubectl get all -n <namespace> -o yaml 以 YAML 格式输出
+kubectl get all -n <namespace> -o json 以  JSON 格式输出
+
+```
 
 ###### 查看当前空间的所有 Pods
 ```sh
