@@ -22,8 +22,20 @@
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   },
-  "go.formatTool": "gofmt",
-  "go.lintTool": "golint",
+  //不需要安装插件
+  //"go.formatTool": "gofmt",
+  // 需要安装插件，go install golang.org/x/tools/cmd/goimports@latest
+  "go.formatTool": "goimports",
+  //不需要安装插件
+  //"go.lintTool": "golint",
+  // 需要安装插件, go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  "go.lintTool": "golangci-lint",
+  //需要配合golangci-lint使用，否则需要注释掉
+  "go.lintFlags": [
+    "run",
+    "--config=.golangci.yml", // 可选，明确指定配置文件
+    "--fast" // 可选，加快速度（跳过慢 linter）
+  ],
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
@@ -47,7 +59,7 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "[php]": {
-    //"editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+    // "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
   },
   "[proto3]": {
     "editor.defaultFormatter": "zxh404.vscode-proto3"
@@ -62,15 +74,22 @@
   "trae.enableCodelens": {
     "enableInlineDocumentation": false,
     "enableInlineUnitTest": false,
-    "enableInlineExplain": false
+    "enableInlineExplain": false,
+    "enableExploreIde": false
   },
   "github.copilot.enable": {
-    "*": true,
+    "*": false,
     "plaintext": false,
     "markdown": false,
     "scminput": false,
-    "go": true
+    "go": true,
+    "python": true
   },
   "github.copilot.nextEditSuggestions.enabled": true,
-  "codeium.enableCodeLens": false
+  "codeium.enableCodeLens": false,
+  "yaml.schemas": {
+    "/Users/liguibing/.vscode/extensions/continue.continue-1.0.9-darwin-arm64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ]
+  }
 }
