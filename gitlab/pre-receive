@@ -1,0 +1,69 @@
+#!/bin/bash
+
+LOG_FILE="/tmp/hook.log"
+RESPONSE_FILE="/tmp/hook.response.out"
+RULE_CHECK_URL="http://host.docker.internal:2011/check"
+
+echo "$(date) >>> pre-receive hook start" >> "$LOG_FILE"
+
+while read oldrev newrev refname
+do
+    echo "处理分支：$refname" >> "$LOG_FILE"
+    
+    branch=$(echo "$refname" | sed 's#refs/heads/##')
+    author=$(git log -1 --pretty=format:'%an' "$newrev")
+    files=$(git diff --name-only "$oldrev" "$newrev")
+
+    file_content_json=""
+
+    for file in $files; do
+        echo "处理文件：$file" >> "$LOG_FILE"
+
+        # 检查文件是否存在（跳过被删除文件）
+        git cat-file -e "$newrev:$file" 2>/dev/null
+        if [ $? -ne 0 ]; then
+            echo "文件被删除，跳过：$file" >> "$LOG_FILE"
+            continue
+        fi
+
+        # 获取文件内容并进行 JSON 转义
+        content=$(git show "$newrev:$file" 2>/dev/null)
+        escaped=$(echo "$content" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+        file_content_json="$file_content_json\"$file\":\"$escaped\","
+    done
+
+    file_content_json="${file_content_json%,}"  # 去掉最后一个逗号
+
+    json_payload=$(cat <<EOF
+{
+  "branch": "$branch",
+  "author": "$author",
+  "files": [$(echo "$files" | sed 's/.*/"&"/' | paste -sd "," -)],
+  "content": { $file_content_json }
+}
+EOF
+)
+
+    echo "构建 JSON 完成：" >> "$LOG_FILE"
+    echo "$json_payload" >> "$LOG_FILE"
+
+    # 调用规则服务
+    response=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" -X POST "$RULE_CHECK_URL" \
+        -H "Content-Type: application/json" \
+        -d "$json_payload")
+
+    echo "规则服务返回状态码：$response" >> "$LOG_FILE"
+    cat "$RESPONSE_FILE" >> "$LOG_FILE"
+
+    # 如果非 200，则输出错误并拒绝提交
+    if [ "$response" != "200" ]; then
+        echo "" >&2
+        echo "❌ 提交被拒绝：" >&2
+        cat "$RESPONSE_FILE" >&2
+        echo "" >&2
+        exit 1
+    fi
+done
+
+echo "$(date) >>> pre-receive hook passed" >> "$LOG_FILE"
+exit 0

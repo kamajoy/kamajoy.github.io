@@ -1,0 +1,67 @@
+<head>
+<title>git提交帮助页面</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+</head>
+<body>
+图片：
+<img src='http://dev.om/post/dotblack?timestamp=23424324&act=1'>
+	
+<p>
+	常用命令<br />
+<br />
+$ git clone git@github.com:username/username.github.com.git //本地如果无远程代码，先做这步，不然就忽略<br />
+<br />
+$ cd .ssh/username.github.com //定位到你blog的目录下<br />
+<br />
+$ git pull origin master //先同步远程文件，后面的参数会自动连接你远程的文件<br />
+<br />
+$ git status //查看本地自己修改了多少文件<br />
+<br />
+$ git add . //添加远程不存在的git文件<br />
+<br />
+$ git commit * -m "what I want told to someone"<br />
+<br />
+$ git push origin master //更新到远程服务器上<br />
+<br />
+<br />
+官方：<br />
+Create a new repository on the command line<br />
+<br />
+touch README.md<br />
+git init<br />
+git add README.md<br />
+git commit -m "first commit"<br />
+git remote add origin git@github.com:lyb411/lyb411.github.com.git<br />
+git push -u origin master<br />
+<br />
+==============================================================<br />
+Push an existing repository from the command line<br />
+<br />
+git remote add origin git@github.com:lyb411/lyb411.github.com.git<br />
+git push -u origin master<br />
+<br />
+自动生成页面<br />
+Welcome to GitHub Pages.<br />
+This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:<br />
+<br />
+$ cd your_repo_root/repo_name<br />
+$ git fetch origin<br />
+$ git checkout gh-pages<br />
+If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.<br />
+<br />
+Designer Templates<br />
+We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.<br />
+<br />
+Rather Drive Stick?<br />
+If you prefer to not use the automatic generator, push a branch named gh-pages to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.<br />
+<br />
+Authors and Contributors<br />
+You can @mention a GitHub username to generate a link to their profile. The resulting &lt;a&gt; element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (@defunkt), PJ Hyett (@pjhyett), and Tom Preston-Werner (@mojombo) founded GitHub.<br />
+<br />
+Support or Contact<br />
+Having trouble with Pages? Check out the documentation at https://help.github.com/pages or contact support@github.com and we’ll help you sort it out.<br />
+</p>
+<p>
+	<br />
+</p>
+</body>

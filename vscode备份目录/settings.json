@@ -1,0 +1,95 @@
+{
+  "workbench.iconTheme": "material-icon-theme",
+  "files.exclude": {
+    "**/.trunk/*actions/": true,
+    "**/.trunk/*logs/": true,
+    "**/.trunk/*notifications/": true,
+    "**/.trunk/*out/": true,
+    "**/.trunk/*plugins/": true
+  },
+  "files.watcherExclude": {
+    "**/.trunk/*actions/": true,
+    "**/.trunk/*logs/": true,
+    "**/.trunk/*notifications/": true,
+    "**/.trunk/*out/": true,
+    "**/.trunk/*plugins/": true
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[vue]": {
+    //"editor.defaultFormatter": "Vue.volar"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  //不需要安装插件
+  //"go.formatTool": "gofmt",
+  // 需要安装插件，go install golang.org/x/tools/cmd/goimports@latest
+  "go.formatTool": "goimports",
+  //不需要安装插件
+  //"go.lintTool": "golint",
+  // 需要安装插件, go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  "go.lintTool": "golangci-lint",
+  //需要配合golangci-lint使用，否则需要注释掉
+  "go.lintFlags": [
+    "run",
+    "--config=.golangci.yml", // 可选，明确指定配置文件
+    "--fast" // 可选，加快速度（跳过慢 linter）
+  ],
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "editor.fontSize": 11,
+  "eslint.validate": [
+    // "javascript",
+    //"javascriptreact",
+    //"typescript",
+    //"typescriptreact",
+    //"vue"
+  ],
+  "workbench.colorTheme": "Dracula Theme",
+  "workbench.editor.wrapTabs": true, //文件标签是否换行
+  "editor.fontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "go.toolsManagement.autoUpdate": true,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[php]": {
+    // "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  "[proto3]": {
+    "editor.defaultFormatter": "zxh404.vscode-proto3"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "marscode.codeCompletionPro": {},
+  "trae.codeCompletionPro": {
+    "enableCodeCompletionPro": true
+  },
+  "trae.enableCodelens": {
+    "enableInlineDocumentation": false,
+    "enableInlineUnitTest": false,
+    "enableInlineExplain": false,
+    "enableExploreIde": false
+  },
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false,
+    "go": true,
+    "python": true
+  },
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "codeium.enableCodeLens": false,
+  "yaml.schemas": {
+    "/Users/liguibing/.vscode/extensions/continue.continue-1.0.9-darwin-arm64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ]
+  }
+}
