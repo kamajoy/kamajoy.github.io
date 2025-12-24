@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>儿童趣味画板</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        background: #f5f5f5;
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 顶部工具栏 */
+      .top-toolbar {
+        background: white;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .emoji-tools {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .emoji-btn {
+        width: 50px;
+        height: 50px;
+        border: none;
+        background: white;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 32px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .emoji-btn:hover {
+        transform: scale(1.15);
+        background: #f0f0f0;
+      }
+
+      .emoji-btn:active {
+        transform: scale(0.95);
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-btn {
+        width: 50px;
+        height: 50px;
+        border: none;
+        background: white;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 24px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .action-btn:hover {
+        transform: scale(1.1);
+        background: #f0f0f0;
+      }
+
+      /* 画布区域 */
+      .canvas-container {
+        flex: 1;
+        background: white;
+        position: relative;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      /* 底部工具栏 */
+      .bottom-toolbar {
+        background: #ffd54f;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+      }
+
+      .tool-btn {
+        width: 60px;
+        height: 60px;
+        border: 3px solid white;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .tool-btn:hover {
+        transform: scale(1.15);
+      }
+
+      .tool-btn.active {
+        border-color: #333;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transform: scale(1.1);
+      }
+
+      .color-btn {
+        width: 60px;
+        height: 60px;
+        border: 3px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .color-btn:hover {
+        transform: scale(1.15);
+      }
+
+      .color-btn.active {
+        border-color: #333;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transform: scale(1.2);
+      }
+
+      .brush-size {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+        padding: 8px 15px;
+        border-radius: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .slider {
+        width: 100px;
+        height: 8px;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        -webkit-appearance: none;
+        background: linear-gradient(to right, #ffb74d, #ff6b6b);
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #333;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #333;
+        cursor: pointer;
+        border: none;
+      }
+
+      .brush-preview {
+        border-radius: 50%;
+        border: 2px solid #999;
+        transition: all 0.3s;
+      }
+
+      /* 提示文本 */
+      .hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: #999;
+        pointer-events: none;
+        text-align: center;
+        z-index: 1;
+      }
+
+      .hint.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 顶部工具栏 -->
+    <div class="top-toolbar">
+      <div class="emoji-tools">
+        <button class="emoji-btn" onclick="drawDog()" title="🐶 小狗">
+          🐶
+        </button>
+        <button class="emoji-btn" onclick="drawCat()" title="🐱 小猫">
+          🐱
+        </button>
+        <button class="emoji-btn" onclick="drawFish()" title="🐟 小鱼">
+          🐟
+        </button>
+        <button class="emoji-btn" onclick="drawFlower()" title="🌸 花朵">
+          🌸
+        </button>
+        <button class="emoji-btn" onclick="drawTree()" title="🌳 树">🌳</button>
+        <button class="emoji-btn" onclick="drawCar()" title="🚗 汽车">
+          🚗
+        </button>
+        <button class="emoji-btn" onclick="drawSun()" title="☀️ 太阳">
+          ☀️
+        </button>
+        <button class="emoji-btn" onclick="drawHouse()" title="🏠 房子">
+          🏠
+        </button>
+        <button class="emoji-btn" onclick="drawRocket()" title="🚀 火箭">
+          🚀
+        </button>
+        <button class="emoji-btn" onclick="drawSteve()" title="🧱 史蒂夫">
+          🧱
+        </button>
+        <button class="emoji-btn" onclick="drawCreeper()" title="💚 苦力怕">
+          💚
+        </button>
+        <button class="emoji-btn" onclick="drawDiamond()" title="💎 钻石">
+          💎
+        </button>
+        <button class="emoji-btn" onclick="drawGrass()" title="🟩 草方块">
+          🟩
+        </button>
+        <button class="emoji-btn" onclick="drawTNT()" title="💥 TNT">💥</button>
+        <button class="emoji-btn" onclick="drawSword()" title="⚔️ 剑">
+          ⚔️
+        </button>
+      </div>
+      <div class="action-btns">
+        <button class="action-btn" onclick="undo()" title="撤销">↶</button>
+        <button class="action-btn" onclick="redo()" title="重做">↷</button>
+        <button class="action-btn" onclick="saveDrawing()" title="保存">
+          💾
+        </button>
+        <button class="action-btn" onclick="clearCanvas()" title="清空">
+          🗑️
+        </button>
+      </div>
+    </div>
+
+    <!-- 画布区域 -->
+    <div class="canvas-container">
+      <div class="hint" id="hint">选择一个图案或颜色开始画画吧！✨</div>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- 底部工具栏 -->
+    <div class="bottom-toolbar">
+      <button
+        class="tool-btn active"
+        id="brushBtn"
+        onclick="selectTool('brush')"
+        title="画笔"
+      >
+        🖌️
+      </button>
+      <button
+        class="tool-btn"
+        id="eraserBtn"
+        onclick="selectTool('eraser')"
+        title="橡皮"
+      >
+        🧹
+      </button>
+
+      <div style="width: 2px; height: 40px; background: white"></div>
+
+      <button
+        class="color-btn"
+        style="background: #ff0000"
+        onclick="selectColor('#FF0000', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #ffa500"
+        onclick="selectColor('#FFA500', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #ffff00"
+        onclick="selectColor('#FFFF00', this)"
+      ></button>
+      <button
+        class="color-btn active"
+        style="background: #008000"
+        onclick="selectColor('#008000', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #0000ff"
+        onclick="selectColor('#0000FF', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #800080"
+        onclick="selectColor('#800080', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #ffb6c1"
+        onclick="selectColor('#FFB6C1', this)"
+      ></button>
+      <button
+        class="color-btn"
+        style="background: #8b4513"
+        onclick="selectColor('#8B4513', this)"
+      ></button>
+
+      <div style="width: 2px; height: 40px; background: white"></div>
+
+      <div class="brush-size">
+        <input
+          type="range"
+          min="2"
+          max="40"
+          value="8"
+          class="slider"
+          id="brushSize"
+        />
+        <div class="brush-preview" id="brushPreview"></div>
+      </div>
+    </div>
+
+    <script>
+      // 全局变量
+      let canvas, ctx;
+      let isDrawing = false;
+      let currentColor = "#008000";
+      let brushSize = 8;
+      let currentTool = "brush";
+      let history = [];
+      let historyStep = -1;
+      let hasDrawn = false;
+
+      // 等待用户点击画布来放置图案
+      let pendingShape = null;
+
+      // 初始化
+      window.onload = function () {
+        canvas = document.getElementById("canvas");
+        ctx = canvas.getContext("2d");
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        // 设置画布样式
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // 初始化画笔预览
+        updateBrushPreview();
+
+        // 绑定事件
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseleave", stopDrawing);
+
+        canvas.addEventListener("touchstart", handleTouch);
+        canvas.addEventListener("touchmove", handleTouch);
+        canvas.addEventListener("touchend", stopDrawing);
+
+        document
+          .getElementById("brushSize")
+          .addEventListener("input", function (e) {
+            brushSize = parseInt(e.target.value);
+            updateBrushPreview();
+          });
+
+        // 保存初始状态
+        saveToHistory();
+      };
+
+      function resizeCanvas() {
+        const oldData = canvas.toDataURL();
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (hasDrawn) {
+          const img = new Image();
+          img.src = oldData;
+          img.onload = () => ctx.drawImage(img, 0, 0);
+        }
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+
+      function hideHint() {
+        document.getElementById("hint").classList.add("hidden");
+      }
+
+      // 选择颜色
+      function selectColor(color, element) {
+        currentColor = color;
+        currentTool = "brush";
+        document
+          .querySelectorAll(".color-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        element.classList.add("active");
+        updateBrushPreview();
+
+        document.getElementById("brushBtn").classList.add("active");
+        document.getElementById("eraserBtn").classList.remove("active");
+      }
+
+      // 选择工具
+      function selectTool(tool) {
+        currentTool = tool;
+        document
+          .getElementById("brushBtn")
+          .classList.toggle("active", tool === "brush");
+        document
+          .getElementById("eraserBtn")
+          .classList.toggle("active", tool === "eraser");
+      }
+
+      // 更新画笔预览
+      function updateBrushPreview() {
+        const preview = document.getElementById("brushPreview");
+        const size = Math.max(8, Math.min(brushSize * 1.5, 30));
+        preview.style.width = size + "px";
+        preview.style.height = size + "px";
+        preview.style.backgroundColor = currentColor;
+      }
+
+      // 获取鼠标/触摸位置
+      function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches && e.touches[0]?.clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0]?.clientY);
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top,
+        };
+      }
+
+      // 开始绘画
+      function startDrawing(e) {
+        if (pendingShape) return;
+
+        e.preventDefault();
+        hideHint();
+        hasDrawn = true;
+        isDrawing = true;
+        const pos = getPosition(e);
+
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+
+        if (currentTool === "eraser") {
+          ctx.globalCompositeOperation = "destination-out";
+        } else {
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+
+      // 绘画
+      function draw(e) {
+        if (!isDrawing || pendingShape) return;
+        e.preventDefault();
+
+        const pos = getPosition(e);
+        ctx.lineWidth = brushSize;
+        ctx.strokeStyle = currentColor;
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      // 停止绘画
+      function stopDrawing() {
+        if (isDrawing) {
+          isDrawing = false;
+          ctx.globalCompositeOperation = "source-over";
+          saveToHistory();
+        }
+      }
+
+      // 处理触摸事件
+      function handleTouch(e) {
+        e.preventDefault();
+        if (e.type === "touchstart") {
+          startDrawing(e);
+        } else if (e.type === "touchmove") {
+          draw(e);
+        }
+      }
+
+      // 保存到历史记录
+      function saveToHistory() {
+        history = history.slice(0, historyStep + 1);
+        history.push(canvas.toDataURL());
+        historyStep = history.length - 1;
+      }
+
+      // 撤销
+      function undo() {
+        if (historyStep > 0) {
+          historyStep--;
+          const img = new Image();
+          img.src = history[historyStep];
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+          };
+        }
+      }
+
+      // 重做
+      function redo() {
+        if (historyStep < history.length - 1) {
+          historyStep++;
+          const img = new Image();
+          img.src = history[historyStep];
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+          };
+        }
+      }
+
+      // 清空画布
+      function clearCanvas() {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveToHistory();
+        hasDrawn = false;
+      }
+
+      // 保存图片
+      function saveDrawing() {
+        const link = document.createElement("a");
+        link.download = `我的画作_${Date.now()}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+
+      // 等待用户点击画布来放置图案
+      function waitForPlacement(shapeFunction) {
+        pendingShape = shapeFunction;
+        canvas.style.cursor = "pointer";
+        canvas.addEventListener("click", placeShape);
+      }
+
+      function placeShape(e) {
+        if (!pendingShape) return;
+
+        hideHint();
+        hasDrawn = true;
+        const pos = getPosition(e);
+        pendingShape(pos.x, pos.y);
+
+        // 清除等待状态
+        pendingShape = null;
+        canvas.style.cursor = "crosshair";
+        canvas.removeEventListener("click", placeShape);
+        saveToHistory();
+      }
+
+      // 画小狗
+      function drawDog(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawDog);
+          return;
+        }
+
+        // 身体
+        ctx.fillStyle = "#D2691E";
+        ctx.fillRect(x - 30, y, 60, 50);
+
+        // 头
+        ctx.beginPath();
+        ctx.arc(x, y - 20, 35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 耳朵
+        ctx.beginPath();
+        ctx.ellipse(x - 25, y - 30, 15, 25, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + 25, y - 30, 15, 25, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(x - 12, y - 20, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 12, y - 20, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 鼻子
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(x, y - 5, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 嘴巴
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y - 5, 10, 0, Math.PI);
+        ctx.stroke();
+
+        // 腿
+        ctx.fillStyle = "#D2691E";
+        ctx.fillRect(x - 25, y + 50, 15, 30);
+        ctx.fillRect(x + 10, y + 50, 15, 30);
+      }
+
+      // 画小猫
+      function drawCat(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawCat);
+          return;
+        }
+
+        // 头
+        ctx.fillStyle = "#FFA500";
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 耳朵（三角形）
+        ctx.beginPath();
+        ctx.moveTo(x - 35, y - 20);
+        ctx.lineTo(x - 20, y - 50);
+        ctx.lineTo(x - 5, y - 20);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 35, y - 20);
+        ctx.lineTo(x + 20, y - 50);
+        ctx.lineTo(x + 5, y - 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(x - 15, y - 5, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 15, y - 5, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 鼻子
+        ctx.beginPath();
+        ctx.moveTo(x, y + 10);
+        ctx.lineTo(x - 5, y + 5);
+        ctx.lineTo(x + 5, y + 5);
+        ctx.closePath();
+        ctx.fill();
+
+        // 微笑
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y + 15, 12, 0, Math.PI);
+        ctx.stroke();
+
+        // 胡须
+        ctx.beginPath();
+        ctx.moveTo(x - 40, y);
+        ctx.lineTo(x - 20, y);
+        ctx.moveTo(x - 40, y + 10);
+        ctx.lineTo(x - 20, y + 5);
+        ctx.moveTo(x + 40, y);
+        ctx.lineTo(x + 20, y);
+        ctx.moveTo(x + 40, y + 10);
+        ctx.lineTo(x + 20, y + 5);
+        ctx.stroke();
+      }
+
+      // 画小鱼
+      function drawFish(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawFish);
+          return;
+        }
+
+        // 身体
+        ctx.fillStyle = "#4169E1";
+        ctx.beginPath();
+        ctx.ellipse(x, y, 50, 30, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 尾巴
+        ctx.beginPath();
+        ctx.moveTo(x - 50, y);
+        ctx.lineTo(x - 80, y - 25);
+        ctx.lineTo(x - 80, y + 25);
+        ctx.closePath();
+        ctx.fill();
+
+        // 鱼鳍
+        ctx.beginPath();
+        ctx.moveTo(x, y - 30);
+        ctx.lineTo(x - 10, y - 50);
+        ctx.lineTo(x + 10, y - 30);
+        ctx.closePath();
+        ctx.fill();
+
+        // 眼睛
+        ctx.fillStyle = "#FFF";
+        ctx.beginPath();
+        ctx.arc(x + 25, y - 5, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(x + 28, y - 5, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 嘴巴
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x + 40, y + 5, 8, 0, Math.PI);
+        ctx.stroke();
+      }
+
+      // 画花朵
+      function drawFlower(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawFlower);
+          return;
+        }
+
+        // 花瓣
+        ctx.fillStyle = "#FF69B4";
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI * 2 * i) / 8;
+          ctx.beginPath();
+          ctx.arc(
+            x + Math.cos(angle) * 30,
+            y + Math.sin(angle) * 30,
+            20,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+
+        // 花心
+        ctx.fillStyle = "#FFD700";
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 茎
+        ctx.strokeStyle = "#228B22";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 20);
+        ctx.lineTo(x, y + 80);
+        ctx.stroke();
+
+        // 叶子
+        ctx.fillStyle = "#32CD32";
+        ctx.beginPath();
+        ctx.ellipse(x - 25, y + 50, 15, 25, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x + 25, y + 50, 15, 25, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 画树
+      function drawTree(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawTree);
+          return;
+        }
+
+        // 树干
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(x - 15, y, 30, 80);
+
+        // 树叶（三层圆形）
+        ctx.fillStyle = "#228B22";
+        ctx.beginPath();
+        ctx.arc(x, y - 20, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x - 30, y - 40, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x + 30, y - 40, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#32CD32";
+        ctx.beginPath();
+        ctx.arc(x, y - 60, 45, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 画汽车
+      function drawCar(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawCar);
+          return;
+        }
+
+        // 车身
+        ctx.fillStyle = "#FF4444";
+        ctx.fillRect(x - 50, y, 100, 40);
+
+        // 车顶
+        ctx.fillRect(x - 30, y - 30, 60, 30);
+
+        // 窗户
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(x - 25, y - 25, 20, 20);
+        ctx.fillRect(x + 5, y - 25, 20, 20);
+
+        // 车轮
+        ctx.fillStyle = "#333";
+        ctx.beginPath();
+        ctx.arc(x - 30, y + 40, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 30, y + 40, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 轮毂
+        ctx.fillStyle = "#999";
+        ctx.beginPath();
+        ctx.arc(x - 30, y + 40, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 30, y + 40, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 画太阳
+      function drawSun(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawSun);
+          return;
+        }
+
+        // 太阳圆盘
+        ctx.fillStyle = "#FFA500";
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 光芒
+        ctx.strokeStyle = "#FFA500";
+        ctx.lineWidth = 5;
+        for (let i = 0; i < 12; i++) {
+          const angle = (Math.PI * 2 * i) / 12;
+          ctx.beginPath();
+          ctx.moveTo(x + Math.cos(angle) * 50, y + Math.sin(angle) * 50);
+          ctx.lineTo(x + Math.cos(angle) * 70, y + Math.sin(angle) * 70);
+          ctx.stroke();
+        }
+      }
+
+      // 画房子
+      function drawHouse(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawHouse);
+          return;
+        }
+
+        // 墙壁
+        ctx.fillStyle = "#D2B48C";
+        ctx.fillRect(x - 50, y, 100, 80);
+
+        // 屋顶
+        ctx.fillStyle = "#8B0000";
+        ctx.beginPath();
+        ctx.moveTo(x - 60, y);
+        ctx.lineTo(x, y - 50);
+        ctx.lineTo(x + 60, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // 门
+        ctx.fillStyle = "#654321";
+        ctx.fillRect(x - 15, y + 30, 30, 50);
+
+        // 窗户
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(x - 40, y + 20, 20, 20);
+        ctx.fillRect(x + 20, y + 20, 20, 20);
+
+        // 窗格
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 30, y + 20);
+        ctx.lineTo(x - 30, y + 40);
+        ctx.moveTo(x - 40, y + 30);
+        ctx.lineTo(x - 20, y + 30);
+        ctx.moveTo(x + 30, y + 20);
+        ctx.lineTo(x + 30, y + 40);
+        ctx.moveTo(x + 20, y + 30);
+        ctx.lineTo(x + 40, y + 30);
+        ctx.stroke();
+      }
+
+      // 画火箭
+      function drawRocket(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawRocket);
+          return;
+        }
+
+        // 火箭主体
+        ctx.fillStyle = "#C0C0C0";
+        ctx.fillRect(x - 20, y, 40, 80);
+
+        // 火箭头
+        ctx.fillStyle = "#FF0000";
+        ctx.beginPath();
+        ctx.moveTo(x - 20, y);
+        ctx.lineTo(x, y - 40);
+        ctx.lineTo(x + 20, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // 窗口
+        ctx.fillStyle = "#87CEEB";
+        ctx.beginPath();
+        ctx.arc(x, y + 30, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 翅膀
+        ctx.fillStyle = "#FF4444";
+        ctx.beginPath();
+        ctx.moveTo(x - 20, y + 50);
+        ctx.lineTo(x - 40, y + 80);
+        ctx.lineTo(x - 20, y + 80);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 20, y + 50);
+        ctx.lineTo(x + 40, y + 80);
+        ctx.lineTo(x + 20, y + 80);
+        ctx.closePath();
+        ctx.fill();
+
+        // 火焰
+        ctx.fillStyle = "#FF6600";
+        ctx.beginPath();
+        ctx.moveTo(x - 15, y + 80);
+        ctx.lineTo(x - 10, y + 100);
+        ctx.lineTo(x, y + 90);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x, y + 80);
+        ctx.lineTo(x, y + 105);
+        ctx.lineTo(x + 10, y + 90);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 15, y + 80);
+        ctx.lineTo(x + 10, y + 100);
+        ctx.lineTo(x, y + 90);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFF00";
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y + 80);
+        ctx.lineTo(x - 5, y + 95);
+        ctx.lineTo(x, y + 85);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y + 80);
+        ctx.lineTo(x + 5, y + 95);
+        ctx.lineTo(x, y + 85);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // 画史蒂夫（我的世界）
+      function drawSteve(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawSteve);
+          return;
+        }
+
+        // 头部
+        ctx.fillStyle = "#D2A679";
+        ctx.fillRect(x - 20, y - 40, 40, 40);
+
+        // 头发
+        ctx.fillStyle = "#5C4033";
+        ctx.fillRect(x - 20, y - 40, 40, 10);
+
+        // 眼睛
+        ctx.fillStyle = "#87CEEB";
+        ctx.fillRect(x - 14, y - 25, 8, 8);
+        ctx.fillRect(x + 6, y - 25, 8, 8);
+
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x - 10, y - 23, 4, 6);
+        ctx.fillRect(x + 10, y - 23, 4, 6);
+
+        // 嘴巴
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(x - 8, y - 8, 16, 3);
+
+        // 身体
+        ctx.fillStyle = "#4A90E2";
+        ctx.fillRect(x - 20, y, 40, 40);
+
+        // 手臂
+        ctx.fillStyle = "#D2A679";
+        ctx.fillRect(x - 30, y, 10, 35);
+        ctx.fillRect(x + 20, y, 10, 35);
+
+        // 腿
+        ctx.fillStyle = "#2C5AA0";
+        ctx.fillRect(x - 15, y + 40, 12, 30);
+        ctx.fillRect(x + 3, y + 40, 12, 30);
+
+        // 鞋子
+        ctx.fillStyle = "#333";
+        ctx.fillRect(x - 15, y + 65, 12, 5);
+        ctx.fillRect(x + 3, y + 65, 12, 5);
+      }
+
+      // 画苦力怕（Creeper）
+      function drawCreeper(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawCreeper);
+          return;
+        }
+
+        // 头部
+        ctx.fillStyle = "#0D9E0D";
+        ctx.fillRect(x - 25, y - 50, 50, 50);
+
+        // 眼睛
+        ctx.fillStyle = "#000";
+        ctx.fillRect(x - 18, y - 40, 10, 10);
+        ctx.fillRect(x + 8, y - 40, 10, 10);
+
+        // 嘴巴（标志性的脸）
+        ctx.fillRect(x - 5, y - 25, 10, 10);
+        ctx.fillRect(x - 15, y - 15, 10, 10);
+        ctx.fillRect(x + 5, y - 15, 10, 10);
+        ctx.fillRect(x - 5, y - 5, 10, 5);
+
+        // 身体
+        ctx.fillStyle = "#0D9E0D";
+        ctx.fillRect(x - 20, y, 40, 40);
+
+        // 腿
+        ctx.fillRect(x - 18, y + 40, 12, 25);
+        ctx.fillRect(x + 6, y + 40, 12, 25);
+
+        // 像素化的阴影效果
+        ctx.fillStyle = "#0A7A0A";
+        ctx.fillRect(x - 25, y - 50, 5, 50);
+        ctx.fillRect(x - 20, y, 5, 40);
+      }
+
+      // 画钻石
+      function drawDiamond(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawDiamond);
+          return;
+        }
+
+        // 钻石主体
+        ctx.fillStyle = "#00CED1";
+        ctx.beginPath();
+        ctx.moveTo(x, y - 30);
+        ctx.lineTo(x - 25, y);
+        ctx.lineTo(x, y + 30);
+        ctx.lineTo(x + 25, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // 高光效果
+        ctx.fillStyle = "#7FFFD4";
+        ctx.beginPath();
+        ctx.moveTo(x, y - 30);
+        ctx.lineTo(x - 15, y - 10);
+        ctx.lineTo(x, y);
+        ctx.closePath();
+        ctx.fill();
+
+        // 阴影效果
+        ctx.fillStyle = "#008B8B";
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - 25, y);
+        ctx.lineTo(x, y + 30);
+        ctx.closePath();
+        ctx.fill();
+
+        // 轮廓
+        ctx.strokeStyle = "#006B6B";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 30);
+        ctx.lineTo(x - 25, y);
+        ctx.lineTo(x, y + 30);
+        ctx.lineTo(x + 25, y);
+        ctx.closePath();
+        ctx.stroke();
+
+        // 内部线条
+        ctx.beginPath();
+        ctx.moveTo(x, y - 30);
+        ctx.lineTo(x, y + 30);
+        ctx.moveTo(x - 25, y);
+        ctx.lineTo(x + 25, y);
+        ctx.stroke();
+      }
+
+      // 画草方块
+      function drawGrass(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawGrass);
+          return;
+        }
+
+        // 方块大小
+        const size = 50;
+
+        // 顶面（草）
+        ctx.fillStyle = "#7CBD3E";
+        ctx.fillRect(x - size / 2, y - size, size, size / 3);
+
+        // 侧面（泥土）
+        ctx.fillStyle = "#9B7653";
+        ctx.fillRect(x - size / 2, y - (size * 2) / 3, size, (size * 2) / 3);
+
+        // 像素化纹理
+        ctx.fillStyle = "#6BA836";
+        for (let i = 0; i < 8; i++) {
+          const px = x - size / 2 + (i * size) / 8;
+          const py = y - size + Math.random() * 10;
+          ctx.fillRect(px, py, size / 8, 3);
+        }
+
+        // 泥土纹理
+        ctx.fillStyle = "#8B6F47";
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            if (Math.random() > 0.5) {
+              ctx.fillRect(
+                x - size / 2 + i * 10,
+                y - (size * 2) / 3 + j * 6,
+                8,
+                5
+              );
+            }
+          }
+        }
+
+        // 方块轮廓
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x - size / 2, y - size, size, size);
+      }
+
+      // 画TNT
+      function drawTNT(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawTNT);
+          return;
+        }
+
+        const size = 50;
+
+        // TNT主体
+        ctx.fillStyle = "#FF0000";
+        ctx.fillRect(x - size / 2, y - size, size, size);
+
+        // 白色条纹
+        ctx.fillStyle = "#FFF";
+        ctx.fillRect(x - size / 2, y - size + 10, size, 10);
+        ctx.fillRect(x - size / 2, y - size + 30, size, 10);
+
+        // TNT 文字
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("TNT", x, y - size / 2);
+
+        // 引线
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x - 10, y - size - 20);
+        ctx.stroke();
+
+        // 火花
+        ctx.fillStyle = "#FF6600";
+        ctx.beginPath();
+        ctx.arc(x - 10, y - size - 20, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFF00";
+        ctx.beginPath();
+        ctx.arc(x - 10, y - size - 20, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 画钻石剑
+      function drawSword(x, y) {
+        if (x === undefined) {
+          waitForPlacement(drawSword);
+          return;
+        }
+
+        // 剑刃
+        ctx.fillStyle = "#00CED1";
+        ctx.fillRect(x - 8, y - 80, 16, 70);
+
+        // 剑尖
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 80);
+        ctx.lineTo(x, y - 95);
+        ctx.lineTo(x + 8, y - 80);
+        ctx.closePath();
+        ctx.fill();
+
+        // 剑刃高光
+        ctx.fillStyle = "#7FFFD4";
+        ctx.fillRect(x - 5, y - 75, 4, 65);
+
+        // 护手
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(x - 20, y - 10, 40, 8);
+
+        // 剑柄
+        ctx.fillStyle = "#654321";
+        ctx.fillRect(x - 6, y - 2, 12, 25);
+
+        // 剑柄纹理
+        ctx.fillStyle = "#8B6F47";
+        ctx.fillRect(x - 6, y + 3, 12, 3);
+        ctx.fillRect(x - 6, y + 10, 12, 3);
+        ctx.fillRect(x - 6, y + 17, 12, 3);
+
+        // 剑柄底部
+        ctx.fillStyle = "#DAA520";
+        ctx.fillRect(x - 8, y + 23, 16, 5);
+      }
+    </script>
+  </body>
+</html>
