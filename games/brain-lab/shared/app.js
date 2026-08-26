@@ -9,6 +9,24 @@
 
   let activeCleanup = null;
   let toastTimer = null;
+  let audioContext = null;
+  let backgroundTimer = null;
+  let backgroundStep = 0;
+  let activeAudioTheme = null;
+  let activeSpeechButton = null;
+
+  const AUDIO_THEMES = {
+    observation: { interval: 760, wave: "sine", notes: [523.25, 659.25, 783.99, 659.25], volume: 0.012 },
+    mazes: { interval: 880, wave: "triangle", notes: [293.66, 392, 440, 349.23], volume: 0.011 },
+    math: { interval: 650, wave: "square", notes: [392, 493.88, 587.33, 493.88], volume: 0.007 },
+    logic: { interval: 920, wave: "sine", notes: [329.63, 369.99, 493.88, 415.3], volume: 0.011 },
+    spatial: { interval: 820, wave: "triangle", notes: [440, 554.37, 659.25, 554.37], volume: 0.01 },
+    language: { interval: 980, wave: "sine", notes: [349.23, 440, 523.25, 440], volume: 0.012 },
+    science: { interval: 720, wave: "triangle", notes: [415.3, 523.25, 622.25, 523.25], volume: 0.009 },
+    life: { interval: 900, wave: "sine", notes: [261.63, 329.63, 392, 329.63], volume: 0.012 },
+    creative: { interval: 1040, wave: "sine", notes: [493.88, 659.25, 739.99, 659.25], volume: 0.011 },
+    board: { interval: 610, wave: "triangle", notes: [392, 523.25, 659.25, 523.25], volume: 0.01 }
+  };
 
   function rand(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -46,6 +64,153 @@
   progress.stars = Number(progress.stars) || 0;
   progress.activities = progress.activities || {};
   progress.drafts = progress.drafts || {};
+  progress.audioEnabled = progress.audioEnabled !== false;
+
+  function normalizeSpeech(value) {
+    return String(value || "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/＋|\+/g, " 加 ")
+      .replace(/−|-/g, " 减 ")
+      .replace(/×/g, " 乘 ")
+      .replace(/÷/g, " 除以 ")
+      .replace(/=/g, " 等于 ")
+      .replace(/＞|>/g, " 大于 ")
+      .replace(/＜|</g, " 小于 ")
+      .replace(/→/g, " 然后 ")
+      .replace(/\?/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function textFromMarkup(markup) {
+    if (!markup) return "";
+    const holder = document.createElement("div");
+    holder.innerHTML = markup;
+    return normalizeSpeech(holder.textContent || "");
+  }
+
+  function speechButton(text, label, extraClass) {
+    return `<button class="speak-button speech-button ${extraClass || ""}" type="button" data-speech="${escapeHtml(normalizeSpeech(text))}" aria-label="${escapeHtml(label || "朗读题目")}" title="${escapeHtml(label || "朗读题目")}"><span aria-hidden="true">🔊</span></button>`;
+  }
+
+  function spokenPrompt(text, speech, extraClass) {
+    return `<div class="spoken-prompt ${extraClass || ""}"><h2>${escapeHtml(text)}</h2>${speechButton(speech || text, "朗读题目", "prompt-speak")}</div>`;
+  }
+
+  function questionSpeech(question) {
+    return normalizeSpeech(`${question.prompt || ""} ${textFromMarkup(question.visual || "")}`);
+  }
+
+  function audioClass() {
+    return window.AudioContext || window.webkitAudioContext;
+  }
+
+  function scheduleTone(frequency, delay, duration, wave, volume) {
+    if (!audioContext || audioContext.state === "closed") return;
+    const start = audioContext.currentTime + (delay || 0);
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = wave || "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume || 0.012), start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.025);
+  }
+
+  function playBackgroundNote() {
+    const theme = AUDIO_THEMES[activeAudioTheme];
+    if (!progress.audioEnabled || !theme || !audioContext || audioContext.state !== "running") return;
+    const frequency = theme.notes[backgroundStep % theme.notes.length];
+    const duckedVolume = activeSpeechButton ? theme.volume * 0.2 : theme.volume;
+    scheduleTone(frequency, 0, Math.min(0.52, theme.interval / 1500), theme.wave, duckedVolume);
+    if (backgroundStep % 4 === 0) scheduleTone(frequency / 2, 0, 0.42, "sine", duckedVolume * 0.45);
+    backgroundStep += 1;
+  }
+
+  function stopBackground() {
+    if (backgroundTimer) window.clearInterval(backgroundTimer);
+    backgroundTimer = null;
+  }
+
+  function startBackground() {
+    const theme = AUDIO_THEMES[activeAudioTheme];
+    if (!progress.audioEnabled || !theme || !audioContext || audioContext.state !== "running") return;
+    stopBackground();
+    backgroundStep = 0;
+    playBackgroundNote();
+    backgroundTimer = window.setInterval(playBackgroundNote, theme.interval);
+  }
+
+  function ensureAudio() {
+    if (!progress.audioEnabled || !activeAudioTheme) return;
+    const Context = audioClass();
+    if (!Context) return;
+    if (!audioContext || audioContext.state === "closed") audioContext = new Context();
+    const ready = audioContext.state === "suspended" ? audioContext.resume() : Promise.resolve();
+    ready.then(() => { if (!backgroundTimer) startBackground(); }).catch(() => {});
+  }
+
+  function setAudioTheme(theme) {
+    const changed = activeAudioTheme !== theme;
+    activeAudioTheme = theme;
+    if (changed) stopBackground();
+    if (audioContext && audioContext.state === "running" && progress.audioEnabled) startBackground();
+  }
+
+  function playSfx(name) {
+    if (!progress.audioEnabled || !activeAudioTheme) return;
+    ensureAudio();
+    const effects = {
+      tap: [[620, 0, 0.06, "sine", 0.01]],
+      move: [[330, 0, 0.07, "triangle", 0.012]],
+      flip: [[440, 0, 0.08, "triangle", 0.012]],
+      collect: [[659.25, 0, 0.09, "sine", 0.018], [880, 0.08, 0.12, "sine", 0.016]],
+      success: [[523.25, 0, 0.1, "sine", 0.018], [659.25, 0.09, 0.12, "sine", 0.018], [783.99, 0.18, 0.16, "sine", 0.02]],
+      wrong: [[293.66, 0, 0.12, "triangle", 0.014], [233.08, 0.1, 0.18, "triangle", 0.012]],
+      match: [[587.33, 0, 0.1, "sine", 0.017], [880, 0.09, 0.15, "sine", 0.018]],
+      dice: [[294, 0, 0.05, "square", 0.008], [392, 0.06, 0.05, "square", 0.008], [523.25, 0.12, 0.09, "square", 0.01]],
+      complete: [[523.25, 0, 0.13, "sine", 0.018], [659.25, 0.11, 0.14, "sine", 0.019], [783.99, 0.22, 0.14, "sine", 0.02], [1046.5, 0.34, 0.24, "sine", 0.018]]
+    };
+    (effects[name] || effects.tap).forEach((tone) => scheduleTone(...tone));
+  }
+
+  function updateAudioButtons() {
+    document.querySelectorAll("[data-audio-toggle]").forEach((button) => {
+      const label = progress.audioEnabled ? "关闭背景音乐和音效" : "开启背景音乐和音效";
+      button.classList.toggle("off", !progress.audioEnabled);
+      button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
+      button.setAttribute("aria-pressed", String(progress.audioEnabled));
+      button.querySelector("span").textContent = progress.audioEnabled ? "♫" : "♩";
+    });
+  }
+
+  function speakText(text, button) {
+    if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance === "undefined") {
+      showToast("当前浏览器暂不支持语音朗读");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if (activeSpeechButton) activeSpeechButton.classList.remove("speaking");
+    const utterance = new window.SpeechSynthesisUtterance(normalizeSpeech(text));
+    utterance.lang = "zh-CN";
+    utterance.rate = 0.82;
+    utterance.pitch = 1.05;
+    activeSpeechButton = button;
+    button.classList.add("speaking");
+    const finish = () => {
+      button.classList.remove("speaking");
+      if (activeSpeechButton === button) activeSpeechButton = null;
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    window.speechSynthesis.speak(utterance);
+  }
 
   function saveProgress() {
     try {
@@ -110,7 +275,10 @@
       <header class="app-header">
         <a class="icon-button" href="${activity ? "./" : seriesHref()}" aria-label="${activity ? "返回活动列表" : "返回益智乐园"}" title="返回">‹</a>
         <div class="header-title"><span>${escapeHtml(app.order)} · ${escapeHtml(app.subtitle)}</span><strong>${escapeHtml(title)}</strong></div>
-        <div class="star-counter" aria-label="总共 ${progress.stars} 颗星"><span>★</span><b>${progress.stars}</b></div>
+        <div class="header-actions">
+          ${activity ? `<button class="audio-toggle ${progress.audioEnabled ? "" : "off"}" type="button" data-audio-toggle aria-label="${progress.audioEnabled ? "关闭背景音乐和音效" : "开启背景音乐和音效"}" title="${progress.audioEnabled ? "关闭背景音乐和音效" : "开启背景音乐和音效"}" aria-pressed="${progress.audioEnabled}"><span aria-hidden="true">${progress.audioEnabled ? "♫" : "♩"}</span></button>` : ""}
+          <div class="star-counter" aria-label="总共 ${progress.stars} 颗星"><span>★</span><b>${progress.stars}</b></div>
+        </div>
       </header>`;
   }
 
@@ -483,7 +651,7 @@
       ${pageHeader(app, activity)}
       <main class="game-main">
         <section class="game-titlebar">
-          <div><p class="eyebrow">${app.order}.${String(index + 1).padStart(2, "0")} · ${app.subtitle}</p><div class="spoken-title"><h1>${activity.title}</h1><button class="speak-button" id="speakTitle" type="button" aria-label="朗读标题" title="朗读标题"><span aria-hidden="true">🔊</span></button></div><p>${activity.description}</p></div>
+          <div><p class="eyebrow">${app.order}.${String(index + 1).padStart(2, "0")} · ${app.subtitle}</p><div class="spoken-title"><h1>${activity.title}</h1>${speechButton(activity.title, "朗读活动标题", "title-speak")}</div><p>${activity.description}</p></div>
           <div class="game-best">${starsMarkup((activityRecord(app, activity) || {}).stars || 0)}<small>历史最佳</small></div>
         </section>
         <section class="game-stage" id="gameMount" aria-live="polite"></section>
@@ -495,6 +663,7 @@
     document.title = `${activity.title} · ${app.title}`;
     document.documentElement.style.setProperty("--theme", app.color);
     document.documentElement.style.setProperty("--theme-soft", app.soft);
+    setAudioTheme(app.id);
     if (activeCleanup) activeCleanup();
     activeCleanup = null;
     const mount = activityShell(app, activity);
@@ -513,28 +682,6 @@
       bingo: renderBingo
     };
     (engines[activity.kind] || renderQuiz)(mount, app, activity);
-    bindTitleSpeech(activity.title);
-  }
-
-  function bindTitleSpeech(title) {
-    const button = document.querySelector("#speakTitle");
-    if (!button) return;
-    button.addEventListener("click", () => {
-      if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance === "undefined") {
-        showToast("当前浏览器暂不支持语音朗读");
-        return;
-      }
-      window.speechSynthesis.cancel();
-      const utterance = new window.SpeechSynthesisUtterance(title);
-      utterance.lang = "zh-CN";
-      utterance.rate = 0.82;
-      utterance.pitch = 1.05;
-      const finish = () => button.classList.remove("speaking");
-      utterance.onend = finish;
-      utterance.onerror = finish;
-      button.classList.add("speaking");
-      window.speechSynthesis.speak(utterance);
-    });
   }
 
   function roundHeader(current, total, label) {
@@ -548,6 +695,7 @@
 
   function renderResult(mount, app, activity, stars, title, detail, retry) {
     markComplete(app, activity, stars, detail);
+    playSfx("complete");
     mount.innerHTML = `
       <div class="result-panel">
         <div class="result-burst" aria-hidden="true">${stars === 3 ? "✦" : stars === 2 ? "◆" : "●"}</div>
@@ -585,7 +733,7 @@
         <div class="challenge-panel">
           ${roundHeader(round, total, "思考挑战")}
           <div class="question-area">
-            <h2>${escapeHtml(question.prompt)}</h2>
+            ${spokenPrompt(question.prompt, questionSpeech(question))}
             ${question.visual ? `<div class="question-visual">${question.visual}</div>` : ""}
             <div class="answer-options ${question.options.length === 3 ? "three" : ""}">
               ${question.options.map((option, index) => `<button class="answer-button" data-value="${escapeHtml(optionValues[index])}">${option}</button>`).join("")}
@@ -599,6 +747,7 @@
           if (answered) return;
           answered = true;
           const isCorrect = button.dataset.value === question.answer;
+          playSfx(isCorrect ? "success" : "wrong");
           if (isCorrect) correct += 1;
           button.classList.add(isCorrect ? "correct" : "wrong");
           mount.querySelectorAll(".answer-button").forEach((entry) => {
@@ -626,7 +775,7 @@
     mount.innerHTML = `
       <div class="challenge-panel search-panel">
         ${roundHeader(0, 6, "寻找目标")}
-        <div class="search-task"><span>请找出全部</span><strong>${target}</strong><b id="searchCount">0 / 6</b></div>
+        <div class="search-task"><span>请找出全部</span><strong>${target}</strong>${speechButton(`请找出全部 ${target}`, "朗读题目", "prompt-speak")}<b id="searchCount">0 / 6</b></div>
         <div class="search-grid">${cells.map((icon) => `<button aria-label="图案 ${icon}" data-target="${icon === target}">${icon}</button>`).join("")}</div>
         <p class="search-note" id="searchNote">找到后轻点它。</p>
       </div>`;
@@ -635,6 +784,7 @@
       button.addEventListener("click", () => {
         if (button.disabled) return;
         if (button.dataset.target === "true") {
+          playSfx("collect");
           button.disabled = true;
           button.classList.add("found");
           found += 1;
@@ -645,6 +795,7 @@
             setTimeout(() => renderResult(mount, app, activity, stars, "全部找到了！", `你找齐了 6 个目标，误点 ${mistakes} 次。`, () => renderSearch(mount, app, activity)), prefersReducedMotion ? 0 : 450);
           }
         } else {
+          playSfx("wrong");
           mistakes += 1;
           button.classList.remove("shake");
           void button.offsetWidth;
@@ -668,6 +819,7 @@
       mount.innerHTML = `
         <div class="challenge-panel memory-panel">
           ${roundHeader(matched, 6, "记忆配对")}
+          ${spokenPrompt("找到相同图案，完成全部配对。")}
           <div class="memory-status"><span>已配对 <b>${matched}</b> / 6</span><span>翻牌 <b>${moves}</b> 次</span></div>
           <div class="memory-grid">${cards.map((card) => `<button class="memory-card ${card.open || card.matched ? "open" : ""} ${card.matched ? "matched" : ""}" data-id="${card.id}" aria-label="${card.open || card.matched ? card.symbol : "未翻开的卡片"}"><span class=card-back>?</span><span class=card-face>${card.symbol}</span></button>`).join("")}</div>
         </div>`;
@@ -677,6 +829,7 @@
     function flip(id) {
       const card = cards.find((item) => item.id === id);
       if (!card || lock || card.open || card.matched) return;
+      playSfx("flip");
       card.open = true;
       if (!first) {
         first = card;
@@ -685,6 +838,7 @@
       }
       moves += 1;
       if (first.symbol === card.symbol) {
+        playSfx("match");
         first.matched = true; card.matched = true; first = null; matched += 1; drawCards();
         if (matched === 6) {
           const stars = moves <= 9 ? 3 : moves <= 14 ? 2 : 1;
@@ -725,7 +879,7 @@
       mount.innerHTML = `
         <div class="challenge-panel order-panel">
           <div class="round-head"><span>顺序挑战</span><strong>轻点两个卡片交换</strong></div>
-          <h2>${config.prompt}</h2>
+          ${spokenPrompt(config.prompt)}
           <div class="order-list">${items.map((item, index) => `<button class="order-item ${selected === index ? "selected" : ""}" data-index="${index}"><span>${index + 1}</span><strong>${item}</strong></button>`).join("")}</div>
           <button class="button primary wide" id="checkOrder">检查顺序</button>
           <div class="feedback-box" id="orderFeedback" role="status"></div>
@@ -734,7 +888,7 @@
         const index = Number(button.dataset.index);
         if (selected < 0) selected = index;
         else if (selected === index) selected = -1;
-        else { [items[selected], items[index]] = [items[index], items[selected]]; selected = -1; }
+        else { [items[selected], items[index]] = [items[index], items[selected]]; selected = -1; playSfx("move"); }
         draw();
       }));
       mount.querySelector("#checkOrder").addEventListener("click", check);
@@ -743,6 +897,7 @@
     function check() {
       attempts += 1;
       const correct = items.every((item, index) => item === config.items[index]);
+      playSfx(correct ? "success" : "wrong");
       const feedback = mount.querySelector("#orderFeedback");
       feedback.className = `feedback-box show ${correct ? "good" : "try"}`;
       if (correct) {
@@ -780,7 +935,7 @@
       mount.innerHTML = `
         <div class="challenge-panel sort-panel">
           ${roundHeader(items.length - left.length, items.length, "分类挑战")}
-          <h2>${config.prompt}</h2>
+          ${spokenPrompt(config.prompt)}
           <div class="sort-items">${left.length ? left.map((item) => `<button class="sort-item ${selected === item.id ? "selected" : ""}" data-id="${item.id}">${item.label}</button>`).join("") : "<strong class=all-sorted>全部分类完成</strong>"}</div>
           <div class="sort-bins">${config.bins.map((bin) => `<button class=sort-bin data-bin="${bin}"><strong>${bin}</strong><span>${items.filter((item) => item.placed === bin).map((item) => item.label).join("、") || "等待卡片"}</span></button>`).join("")}</div>
           <p class="sort-help" id="sortHelp">先选择一张卡片，再选择它的分类。</p>
@@ -793,12 +948,14 @@
       if (selected === null) { showToast("请先选择一张卡片"); return; }
       const item = items.find((entry) => entry.id === selected);
       if (item.bin === bin) {
+        playSfx("collect");
         item.placed = bin; selected = null; draw();
         if (items.every((entry) => entry.placed)) {
           const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
           setTimeout(() => renderResult(mount, app, activity, stars, "分类完成！", `全部 ${items.length} 张卡片都找到了位置。`, () => renderSort(mount, app, activity)), prefersReducedMotion ? 0 : 500);
         }
       } else {
+        playSfx("wrong");
         mistakes += 1;
         mount.querySelector("#sortHelp").textContent = `${item.label} 不属于“${bin}”，再想想它的特点。`;
       }
@@ -865,6 +1022,16 @@
     const maxMoves = activity.factory === "limited" ? path.length + 5 : Infinity;
     const labels = { animal: ["🐰", "🏠"], city: ["🚌", "🏫"], number: ["🚶", "🏁"], word: ["🚶", "🏁"], limited: ["🚶", "🏁"], treasure: ["🧭", "🚪"], coop: ["●", "旗"] };
     const marks = labels[activity.factory] || ["🚶", "🏁"];
+    const prompts = {
+      animal: "带小动物穿过迷宫，安全回到家。",
+      city: "沿着道路把校车开到学校。",
+      number: "按顺序收集数字一、二、三，再到达终点。",
+      word: "按顺序经过春、夏、秋三个文字路标，再到达终点。",
+      limited: "在限定步数内走到终点。",
+      treasure: "先收集三件宝物，再走到出口。",
+      coop: "两名玩家轮流行动，让两位伙伴都到达终点。"
+    };
+    const mazePrompt = prompts[activity.factory] || activity.description;
 
     function canMove(from, to) {
       const fx = from % cols; const fy = Math.floor(from / cols); const tx = to % cols; const ty = Math.floor(to / cols);
@@ -878,18 +1045,19 @@
 
     function moveTo(next) {
       const current = players[activePlayer];
-      if (!canMove(current, next)) { showToast("这里有墙，换一条路试试"); return; }
+      if (!canMove(current, next)) { playSfx("wrong"); showToast("这里有墙，换一条路试试"); return; }
       players[activePlayer] = next; moves += 1;
       const token = tokens.find((entry) => entry.index === next && !entry.collected);
-      if (token) { token.collected = true; collected += 1; }
-      if (moves > maxMoves) { showToast("超过限定步数了，重新规划路线"); return renderMaze(mount, app, activity); }
+      if (token) { token.collected = true; collected += 1; playSfx("collect"); }
+      else playSfx("move");
+      if (moves > maxMoves) { playSfx("wrong"); showToast("超过限定步数了，重新规划路线"); return renderMaze(mount, app, activity); }
 
       if (activity.factory === "coop") {
         if (players.every((position) => position === goal)) return finishMaze();
         activePlayer = activePlayer === 0 ? 1 : 0;
         if (players[activePlayer] === goal) activePlayer = activePlayer === 0 ? 1 : 0;
       } else if (next === goal) {
-        if (tokens.some((entry) => !entry.collected)) showToast("还有路标或宝物没有收集");
+        if (tokens.some((entry) => !entry.collected)) { playSfx("wrong"); showToast("还有路标或宝物没有收集"); }
         else return finishMaze();
       }
       draw();
@@ -913,6 +1081,7 @@
       mount.innerHTML = `
         <div class="challenge-panel maze-panel">
           <div class="round-head"><span>${activity.factory === "coop" ? `轮到玩家 ${activePlayer + 1}` : "路线挑战"}</span><strong>已走 ${moves} 步${remaining}${tokenText}</strong></div>
+          ${spokenPrompt(mazePrompt)}
           <div class="maze-wrap">
             <div class="maze-grid" style="--maze-cols:${cols}">
               ${cells.map((cell, index) => {
@@ -965,15 +1134,18 @@
       if (index === 0 || index === goal) return;
       if (!testing) {
         if (blocked.has(index)) blocked.delete(index); else blocked.add(index);
+        playSfx("tap");
         draw();
       } else if (!blocked.has(index) && adjacent(player, index)) {
+        playSfx("move");
         player = index; moves += 1; draw();
         if (player === goal) setTimeout(() => renderResult(mount, app, activity, 3, "自制迷宫通过！", `你设计并用 ${moves} 步走完了自己的迷宫。`, () => renderMazeEditor(mount, app, activity)), prefersReducedMotion ? 0 : 350);
       }
     }
 
     function startTest() {
-      if (!openGridPath(blocked, cols, rows)) { showToast("这个迷宫没有通路，请移开一些墙壁"); return; }
+      if (!openGridPath(blocked, cols, rows)) { playSfx("wrong"); showToast("这个迷宫没有通路，请移开一些墙壁"); return; }
+      playSfx("success");
       testing = true; player = 0; moves = 0; draw(); showToast("路线可通，现在亲自试玩");
     }
 
@@ -981,7 +1153,7 @@
       mount.innerHTML = `
         <div class="challenge-panel maze-panel editor-panel">
           <div class="round-head"><span>${testing ? "试玩模式" : "设计模式"}</span><strong>${testing ? `已走 ${moves} 步` : `已放置 ${blocked.size} 面墙`}</strong></div>
-          <h2>${testing ? "轻点相邻空格走到终点" : "轻点方格放置或移除墙壁"}</h2>
+          ${spokenPrompt(testing ? "轻点相邻空格走到终点" : "轻点方格放置或移除墙壁")}
           <div class="open-grid" style="--maze-cols:${cols}">${Array.from({ length: cols * rows }, (_, index) => `<button class="${blocked.has(index) ? "blocked" : ""} ${player === index && testing ? "player" : ""} ${index === 0 ? "start" : ""} ${index === goal ? "goal" : ""}" data-index="${index}">${index === 0 ? (testing ? "●" : "起") : index === goal ? "终" : blocked.has(index) ? "墙" : ""}</button>`).join("")}</div>
           <div class="editor-actions">
             ${testing ? `<button class="button secondary" id="editMaze">继续编辑</button>` : `<button class="button secondary" id="clearMaze">清空墙壁</button><button class="button primary" id="testMaze">检查并试玩</button>`}
@@ -1042,7 +1214,7 @@
     let currentColor = colors[0]; let size = 7; let strokes = []; let drawing = null; let context; let canvas; let width; let height;
     mount.innerHTML = `
       <div class="creative-panel">
-        <div class="creative-prompt"><span>创作任务</span><h2>${config[0]}</h2></div>
+        <div class="creative-prompt"><span>创作任务</span>${spokenPrompt(config[0], config[0], "creative-spoken-prompt")}</div>
         <div class="draw-toolbar">
           <div class="color-swatches" aria-label="画笔颜色">${colors.map((color, index) => `<button class="swatch ${index === 0 ? "active" : ""}" data-color="${color}" style="background:${color}" aria-label="选择颜色 ${index + 1}"></button>`).join("")}</div>
           <label class="brush-size">画笔 <input type="range" min="3" max="18" value="7" aria-label="画笔粗细"></label>
@@ -1072,6 +1244,7 @@
 
     canvas.addEventListener("pointerdown", (event) => {
       event.preventDefault(); canvas.setPointerCapture(event.pointerId);
+      playSfx("move");
       const start = point(event); drawing = { color: currentColor, size, points: [start] }; strokes.push(drawing);
       context.fillStyle = currentColor; context.beginPath(); context.arc(start[0], start[1], size / 2, 0, Math.PI * 2); context.fill();
       mount.querySelector("#finishDraw").disabled = strokes.length < 2;
@@ -1085,11 +1258,11 @@
     });
     const stop = () => { drawing = null; };
     canvas.addEventListener("pointerup", stop); canvas.addEventListener("pointercancel", stop);
-    mount.querySelectorAll(".swatch").forEach((button) => button.addEventListener("click", () => { currentColor = button.dataset.color; mount.querySelectorAll(".swatch").forEach((entry) => entry.classList.toggle("active", entry === button)); }));
+    mount.querySelectorAll(".swatch").forEach((button) => button.addEventListener("click", () => { currentColor = button.dataset.color; playSfx("tap"); mount.querySelectorAll(".swatch").forEach((entry) => entry.classList.toggle("active", entry === button)); }));
     mount.querySelector(".brush-size input").addEventListener("input", (event) => { size = Number(event.target.value); });
-    mount.querySelector("#undoDraw").addEventListener("click", () => { strokes.pop(); redraw(); });
-    mount.querySelector("#clearDraw").addEventListener("click", () => { if (strokes.length && window.confirm("清空当前画布吗？")) { strokes = []; redraw(); } });
-    mount.querySelector("#saveDraw").addEventListener("click", () => { const link = document.createElement("a"); link.download = `${activity.title}.png`; link.href = canvas.toDataURL("image/png"); link.click(); showToast("作品已保存为图片"); });
+    mount.querySelector("#undoDraw").addEventListener("click", () => { strokes.pop(); playSfx("move"); redraw(); });
+    mount.querySelector("#clearDraw").addEventListener("click", () => { if (strokes.length && window.confirm("清空当前画布吗？")) { strokes = []; playSfx("wrong"); redraw(); } });
+    mount.querySelector("#saveDraw").addEventListener("click", () => { const link = document.createElement("a"); link.download = `${activity.title}.png`; link.href = canvas.toDataURL("image/png"); link.click(); playSfx("success"); showToast("作品已保存为图片"); });
     mount.querySelector("#finishDraw").addEventListener("click", () => renderResult(mount, app, activity, strokes.length >= 8 ? 3 : strokes.length >= 4 ? 2 : 1, "作品完成！", "你把自己的想法变成了一幅独一无二的作品。", () => renderDraw(mount, app, activity)));
     redraw();
   }
@@ -1110,7 +1283,7 @@
     const config = writeConfig(activity.factory); const key = `${app.id}:${activity.id}`; const saved = progress.drafts[key] || "";
     mount.innerHTML = `
       <div class="creative-panel write-panel">
-        <div class="creative-prompt"><span>表达任务</span><h2>${config[0]}</h2></div>
+        <div class="creative-prompt"><span>表达任务</span>${spokenPrompt(config[0], config[0], "creative-spoken-prompt")}</div>
         <div class="idea-chips">${config[2].map((idea) => `<span>${idea}</span>`).join("")}</div>
         <label class="writing-area"><span>我的创作</span><textarea id="writingText" placeholder="${escapeHtml(config[1])}" maxlength="600">${escapeHtml(saved)}</textarea><small><b id="charCount">${saved.length}</b> / 600</small></label>
         <button class="button primary wide" id="finishWrite" ${saved.trim().length < 6 ? "disabled" : ""}>完成创作</button>
@@ -1134,11 +1307,11 @@
       mount.innerHTML = `
         <div class="challenge-panel checklist-panel">
           ${roundHeader(checked.size, 3, "家庭任务打卡")}
-          <h2>选择并完成至少 3 项任务</h2>
+          ${spokenPrompt("选择并完成至少 3 项任务")}
           <div class="checklist">${tasks.map((task, index) => `<label><input type="checkbox" data-index="${index}" ${checked.has(index) ? "checked" : ""}><span>${task}</span></label>`).join("")}</div>
           <button class="button primary wide" id="finishChecklist" ${checked.size < 3 ? "disabled" : ""}>完成今日挑战</button>
         </div>`;
-      mount.querySelectorAll(".checklist input").forEach((input) => input.addEventListener("change", () => { const index = Number(input.dataset.index); if (input.checked) checked.add(index); else checked.delete(index); draw(); }));
+      mount.querySelectorAll(".checklist input").forEach((input) => input.addEventListener("change", () => { const index = Number(input.dataset.index); if (input.checked) { checked.add(index); playSfx("collect"); } else { checked.delete(index); playSfx("move"); } draw(); }));
       mount.querySelector("#finishChecklist").addEventListener("click", () => renderResult(mount, app, activity, checked.size >= 6 ? 3 : checked.size >= 4 ? 2 : 1, "谢谢你的参与！", `今天完成了 ${checked.size} 项家庭任务。`, () => renderChecklist(mount, app, activity)));
     }
     draw();
@@ -1156,6 +1329,11 @@
   function renderBoard(mount, app, activity) {
     const total = 20; let position = 0; let turns = 0; let gems = 0; let pending = null;
     const gemCells = new Set([4, 9, 15]); const trapCells = new Set([7, 13]);
+    const instruction = activity.factory === "diceMath"
+      ? "掷出两颗骰子，算出点数之和，答对后前进。"
+      : activity.factory === "familyQuiz"
+        ? "掷骰子抽取家庭知识题，答对后按点数前进。"
+        : "掷骰子前进，收集宝石、避开陷阱并到达终点。";
 
     function finishBoard() {
       const stars = turns <= 4 ? 3 : turns <= 7 ? 2 : 1;
@@ -1164,9 +1342,10 @@
 
     function applyMove(steps) {
       position = Math.min(total - 1, position + steps);
+      playSfx("move");
       if (activity.factory === "treasure") {
-        if (gemCells.has(position)) { gems += 1; gemCells.delete(position); showToast("找到一颗宝石"); }
-        if (trapCells.has(position)) { position = Math.max(0, position - 2); showToast("遇到陷阱，后退两格"); }
+        if (gemCells.has(position)) { gems += 1; gemCells.delete(position); playSfx("collect"); showToast("找到一颗宝石"); }
+        if (trapCells.has(position)) { position = Math.max(0, position - 2); playSfx("wrong"); showToast("遇到陷阱，后退两格"); }
       }
       pending = null;
       if (position >= total - 1) setTimeout(finishBoard, prefersReducedMotion ? 0 : 400); else draw();
@@ -1174,6 +1353,7 @@
 
     function roll() {
       if (pending) return;
+      playSfx("dice");
       turns += 1;
       if (activity.factory === "diceMath") {
         const a = rand(1, 6); const b = rand(1, 6); const sum = a + b;
@@ -1189,8 +1369,9 @@
 
     function answer(value) {
       if (!pending) return;
-      if (value === pending.answer) { showToast("回答正确，开始前进"); applyMove(pending.steps); }
+      if (value === pending.answer) { playSfx("success"); showToast("回答正确，开始前进"); applyMove(pending.steps); }
       else {
+        playSfx("wrong");
         showToast(`这次没有答对，正确答案是 ${pending.answer}`);
         pending = null; draw();
       }
@@ -1201,9 +1382,9 @@
         <div class="challenge-panel board-panel">
           <div class="round-head"><span>第 ${turns + 1} 回合</span><strong>位置 ${position + 1} / ${total}${activity.factory === "treasure" ? ` · 宝石 ${gems}` : ""}</strong></div>
           <div class="game-board">${Array.from({ length: total }, (_, index) => `<div class="board-cell ${position === index ? "current" : ""} ${gemCells.has(index) ? "gem" : ""} ${trapCells.has(index) ? "trap" : ""}"><small>${index + 1}</small>${index === 0 ? "起" : index === total - 1 ? "终" : gemCells.has(index) ? "◆" : trapCells.has(index) ? "!" : ""}${position === index ? "<b>●</b>" : ""}</div>`).join("")}</div>
-          ${pending ? `<div class="board-question"><span>${pending.visual}</span><h2>${pending.prompt}</h2><div>${pending.options.map((option) => `<button class="answer-button" data-value="${escapeHtml(option)}">${option}</button>`).join("")}</div></div>` : `<button class="dice-button" id="rollDice"><span aria-hidden="true">⚄</span><strong>掷骰子</strong></button>`}
+          ${pending ? `<div class="board-question"><span>${pending.visual}</span>${spokenPrompt(pending.prompt, `${pending.prompt} ${pending.visual}`, "board-question-prompt")}<div>${pending.options.map((option) => `<button class="answer-button" data-value="${escapeHtml(option)}">${option}</button>`).join("")}</div></div>` : `${spokenPrompt(instruction, instruction, "board-instruction")}<button class="dice-button" id="rollDice"><span aria-hidden="true">⚄</span><strong>掷骰子</strong></button>`}
         </div>`;
-      if (pending) mount.querySelectorAll(".board-question button").forEach((button) => button.addEventListener("click", () => answer(button.dataset.value)));
+      if (pending) mount.querySelectorAll(".board-question .answer-button").forEach((button) => button.addEventListener("click", () => answer(button.dataset.value)));
       else mount.querySelector("#rollDice").addEventListener("click", roll);
     }
 
@@ -1225,12 +1406,15 @@
     function drawNumber() {
       const remaining = Array.from({ length: 30 }, (_, index) => index + 1).filter((number) => !drawn.has(number));
       if (!remaining.length) return;
+      playSfx("dice");
       current = pick(remaining); drawn.add(current); draws += 1; draw();
     }
 
     function mark(index) {
       const number = numbers[index];
-      if (!drawn.has(number)) { showToast("这个数字还没有抽到"); return; }
+      if (!drawn.has(number)) { playSfx("wrong"); showToast("这个数字还没有抽到"); return; }
+      if (marked.has(index)) { playSfx("tap"); showToast("这个数字已经点亮了"); return; }
+      playSfx("collect");
       marked.add(index); draw();
       if (hasLine()) {
         const stars = draws <= 12 ? 3 : draws <= 20 ? 2 : 1;
@@ -1243,6 +1427,7 @@
         <div class="challenge-panel bingo-panel">
           <div class="round-head"><span>数字宾果</span><strong>已抽 ${draws} 个数字</strong></div>
           <div class="bingo-call"><span>${current === null ? "准备" : "本轮数字"}</span><strong>${current === null ? "?" : current}</strong></div>
+          ${spokenPrompt(current === null ? "抽取数字，在卡片上点亮相同数字，连成一条线即可完成。" : `请找到并点亮数字 ${current}`, current === null ? "抽取数字，在卡片上点亮相同数字，横行、竖列或斜线连成一条线即可完成。" : `请找到并点亮数字 ${current}`, "bingo-prompt")}
           <div class="bingo-grid">${numbers.map((number, index) => `<button class="${marked.has(index) ? "marked" : ""}" data-index="${index}">${number}</button>`).join("")}</div>
           <button class="button primary wide" id="drawNumber">${current === null ? "抽第一个数字" : "抽下一个数字"}</button>
         </div>`;
@@ -1255,15 +1440,53 @@
 
   function renderCurrent() {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (activeSpeechButton) activeSpeechButton.classList.remove("speaking");
+    activeSpeechButton = null;
+    stopBackground();
     window.scrollTo(0, 0);
-    if (!APP_ID) { document.body.dataset.page = "hub"; renderHub(); return; }
+    if (!APP_ID) { activeAudioTheme = null; document.body.dataset.page = "hub"; renderHub(); return; }
     const app = appById(APP_ID);
     if (!app) { appRoot.innerHTML = "<main class=error-page><h1>没有找到这个主题</h1><a href=../>返回益智乐园</a></main>"; return; }
     document.body.dataset.page = "app";
     const match = window.location.hash.match(/^#activity=([a-z0-9-]+)$/);
     const activity = match ? app.activities.find((item) => item.id === match[1]) : null;
-    if (activity) renderActivity(app, activity); else { if (activeCleanup) activeCleanup(); activeCleanup = null; renderAppHome(app); }
+    if (activity) renderActivity(app, activity);
+    else { activeAudioTheme = null; if (activeCleanup) activeCleanup(); activeCleanup = null; renderAppHome(app); }
   }
+
+  appRoot.addEventListener("pointerdown", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest("button, a, input, textarea, label");
+    if (!control || !activeAudioTheme) return;
+    ensureAudio();
+    if (control.matches(".speech-button, .icon-button, .button, .tool-button, .audio-toggle")) playSfx("tap");
+  });
+
+  appRoot.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const speechControl = event.target.closest(".speech-button");
+    if (speechControl) {
+      speakText(speechControl.dataset.speech || "", speechControl);
+      return;
+    }
+    const audioControl = event.target.closest("[data-audio-toggle]");
+    if (audioControl) {
+      progress.audioEnabled = !progress.audioEnabled;
+      saveProgress();
+      if (progress.audioEnabled) {
+        ensureAudio();
+        playSfx("success");
+      } else {
+        stopBackground();
+      }
+      updateAudioButtons();
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopBackground();
+    else if (progress.audioEnabled && activeAudioTheme) ensureAudio();
+  });
 
   window.addEventListener("hashchange", renderCurrent);
   renderCurrent();
