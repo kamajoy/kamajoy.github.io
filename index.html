@@ -216,6 +216,20 @@
       background: #e7e1d5;
     }
 
+    .whiteboard-preview {
+      display: block;
+      padding: 0;
+      background: #f7f7f5;
+    }
+
+    .whiteboard-preview img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 38%;
+    }
+
     .hand-disc {
       width: 128px;
       max-width: 100%;
@@ -417,7 +431,7 @@
       <section aria-labelledby="games-heading">
         <div class="section-heading">
           <h2 id="games-heading">游戏</h2>
-          <span class="count">1 个作品</span>
+          <span class="count">2 个作品</span>
         </div>
 
         <div class="game-list">
@@ -435,6 +449,29 @@
                   <span class="tag">单人</span>
                   <span class="tag">触控适配</span>
                   <span class="tag">离线可玩</span>
+                </div>
+              </div>
+              <span class="open-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 19 19 5"></path>
+                  <path d="M9 5h10v10"></path>
+                </svg>
+              </span>
+            </div>
+          </a>
+
+          <a class="game-card" href="./games/nomi-whiteboard/index.html" aria-label="打开 Nomi 实时白板">
+            <div class="game-preview whiteboard-preview" aria-hidden="true">
+              <img src="./games/nomi-whiteboard/preview.png" alt="" loading="lazy" decoding="async">
+            </div>
+            <div class="game-body">
+              <div class="game-copy">
+                <h3 class="game-title">Nomi 实时白板</h3>
+                <p class="game-description">画笔、形状、文字和便签一应俱全，支持触控缩放与多格式导出。</p>
+                <div class="tags" aria-label="白板特性">
+                  <span class="tag">自由绘图</span>
+                  <span class="tag">Pad 适配</span>
+                  <span class="tag">本地保存</span>
                 </div>
               </div>
               <span class="open-icon" aria-hidden="true">
