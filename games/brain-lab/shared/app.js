@@ -483,7 +483,7 @@
       ${pageHeader(app, activity)}
       <main class="game-main">
         <section class="game-titlebar">
-          <div><p class="eyebrow">${app.order}.${String(index + 1).padStart(2, "0")} · ${app.subtitle}</p><h1>${activity.title}</h1><p>${activity.description}</p></div>
+          <div><p class="eyebrow">${app.order}.${String(index + 1).padStart(2, "0")} · ${app.subtitle}</p><div class="spoken-title"><h1>${activity.title}</h1><button class="speak-button" id="speakTitle" type="button" aria-label="朗读标题" title="朗读标题"><span aria-hidden="true">🔊</span></button></div><p>${activity.description}</p></div>
           <div class="game-best">${starsMarkup((activityRecord(app, activity) || {}).stars || 0)}<small>历史最佳</small></div>
         </section>
         <section class="game-stage" id="gameMount" aria-live="polite"></section>
@@ -513,6 +513,28 @@
       bingo: renderBingo
     };
     (engines[activity.kind] || renderQuiz)(mount, app, activity);
+    bindTitleSpeech(activity.title);
+  }
+
+  function bindTitleSpeech(title) {
+    const button = document.querySelector("#speakTitle");
+    if (!button) return;
+    button.addEventListener("click", () => {
+      if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance === "undefined") {
+        showToast("当前浏览器暂不支持语音朗读");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new window.SpeechSynthesisUtterance(title);
+      utterance.lang = "zh-CN";
+      utterance.rate = 0.82;
+      utterance.pitch = 1.05;
+      const finish = () => button.classList.remove("speaking");
+      utterance.onend = finish;
+      utterance.onerror = finish;
+      button.classList.add("speaking");
+      window.speechSynthesis.speak(utterance);
+    });
   }
 
   function roundHeader(current, total, label) {
@@ -1232,6 +1254,7 @@
   }
 
   function renderCurrent() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     window.scrollTo(0, 0);
     if (!APP_ID) { document.body.dataset.page = "hub"; renderHub(); return; }
     const app = appById(APP_ID);
