@@ -1,0 +1,19 @@
+{
+  "name": "太空数学闯关",
+  "short_name": "太空数学",
+  "description": "适合6-9岁儿童的数学与逻辑闯关游戏",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#071b2b",
+  "theme_color": "#071b2b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

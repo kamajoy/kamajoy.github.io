@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071b2b">
+  <meta name="description" content="适合6-9岁儿童的太空数学闯关游戏">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="太空数学闯关">
+  <title>太空数学闯关</title>
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="space-backdrop" aria-hidden="true">
+    <span class="twinkle t1"></span><span class="twinkle t2"></span><span class="twinkle t3"></span>
+    <span class="twinkle t4"></span><span class="twinkle t5"></span><span class="twinkle t6"></span>
+  </div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="homeButton" aria-label="返回星球地图">
+        <svg class="brand-rocket" viewBox="0 0 64 64" role="img" aria-label="小火箭">
+          <path d="M35 8c10 4 16 12 18 24L37 48 18 29C21 19 27 12 35 8Z" fill="#fff" stroke="#17304b" stroke-width="3"/>
+          <circle cx="38" cy="25" r="6" fill="#58c7f3" stroke="#17304b" stroke-width="3"/>
+          <path d="m21 31-9 2-4 10 15-2m13 4-2 11-10 4 3-15" fill="#ff6b67" stroke="#17304b" stroke-width="3" stroke-linejoin="round"/>
+          <path d="m17 47-8 8m15-4-4 7" stroke="#ffd65a" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <span><strong>太空数学</strong><small>星际闯关队</small></span>
+      </button>
+
+      <div class="hud" aria-label="游戏数据">
+        <div class="hud-item score-chip"><span aria-hidden="true">◆</span><b id="scoreValue">0</b><small>积分</small></div>
+        <div class="hud-item star-chip"><span aria-hidden="true">★</span><b id="starValue">0</b><small>星星</small></div>
+      </div>
+
+      <nav class="top-actions" aria-label="功能按钮">
+        <button class="icon-button" id="soundButton" aria-label="关闭声音" title="声音">
+          <span id="soundIcon" aria-hidden="true">♪</span>
+        </button>
+        <button class="record-button" id="recordButton">
+          <span aria-hidden="true">▥</span><span>学习档案</span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="mapScreen" class="screen active" aria-labelledby="mapTitle">
+        <div class="mission-intro">
+          <div class="intro-copy">
+            <p class="eyebrow">欢迎回来，小小航天员</p>
+            <h1 id="mapTitle">今天要探索哪颗星球？</h1>
+            <p id="missionTip">完成每个任务，收集星星，让整片银河亮起来！</p>
+            <div class="galaxy-progress" aria-label="银河探索进度">
+              <div class="progress-label"><span>银河探索进度</span><strong id="progressText">0 / 12 关</strong></div>
+              <div class="progress-track"><span id="progressFill"></span></div>
+            </div>
+          </div>
+
+          <div class="astronaut-wrap" aria-hidden="true">
+            <svg class="astronaut" viewBox="0 0 250 220">
+              <ellipse cx="126" cy="204" rx="72" ry="10" fill="#020b15" opacity=".25"/>
+              <path d="M72 96c-22 6-36 28-28 51 6 18 21 23 37 24" fill="none" stroke="#59c7f2" stroke-width="13" stroke-linecap="round"/>
+              <path d="M175 102c27 1 42 14 44 38" fill="none" stroke="#ff856d" stroke-width="13" stroke-linecap="round"/>
+              <path d="m215 137 11-6 4 15" fill="none" stroke="#ffd85a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="76" y="82" width="104" height="112" rx="38" fill="#edf8ff" stroke="#17304b" stroke-width="5"/>
+              <rect x="92" y="129" width="72" height="43" rx="13" fill="#dcecf4" stroke="#17304b" stroke-width="4"/>
+              <circle cx="111" cy="150" r="6" fill="#ff645f"/><circle cx="132" cy="150" r="6" fill="#ffd34f"/><path d="M147 143v15" stroke="#28b58f" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="126" cy="70" r="59" fill="#f7fbff" stroke="#17304b" stroke-width="5"/>
+              <path d="M78 69c6-39 92-48 99 1-6 33-90 36-99-1Z" fill="#163e5a"/>
+              <ellipse cx="125" cy="67" rx="42" ry="29" fill="#ffd89e"/>
+              <circle cx="111" cy="65" r="4" fill="#17304b"/><circle cx="140" cy="65" r="4" fill="#17304b"/>
+              <path d="M115 78q11 10 23 0" fill="none" stroke="#d95b65" stroke-width="4" stroke-linecap="round"/>
+              <path d="m93 188-4 17-24 2m92-19 6 17 24 2" fill="none" stroke="#edf8ff" stroke-width="18" stroke-linecap="round"/>
+              <path d="M76 207h26m48 0h27" stroke="#ff6b67" stroke-width="8" stroke-linecap="round"/>
+              <path d="M196 43l4 9 10 1-8 6 3 10-9-6-9 6 3-10-8-6 10-1Z" fill="#ffd85a"/>
+            </svg>
+            <span class="speech-bubble" id="coachBubble">从月球基地出发吧！</span>
+          </div>
+        </div>
+
+        <div id="planetMap" class="planet-map" aria-label="关卡地图"></div>
+      </section>
+
+      <section id="gameScreen" class="screen game-screen" aria-labelledby="levelTitle">
+        <div class="game-heading">
+          <button class="back-button" id="backToMap" aria-label="返回地图"><span aria-hidden="true">‹</span><span>地图</span></button>
+          <div class="level-heading-text">
+            <p id="levelWorld">月球基地 · 第1关</p>
+            <h1 id="levelTitle">起飞热身</h1>
+          </div>
+          <div class="question-counter"><span id="questionNumber">1</span><small>/ 5</small></div>
+        </div>
+
+        <div class="question-progress" aria-hidden="true">
+          <span class="question-dot active"></span><span class="question-dot"></span><span class="question-dot"></span>
+          <span class="question-dot"></span><span class="question-dot"></span>
+        </div>
+
+        <div class="game-layout">
+          <aside class="mission-status" aria-label="本关状态">
+            <div class="mini-planet" id="miniPlanet"></div>
+            <p>本关任务</p>
+            <strong id="skillLabel">10以内加法</strong>
+            <div class="live-stats">
+              <div><span aria-hidden="true">◆</span><b id="roundScore">0</b><small>本关积分</small></div>
+              <div><span aria-hidden="true">⚡</span><b id="streakValue">0</b><small>连续答对</small></div>
+            </div>
+          </aside>
+
+          <section class="question-panel" aria-live="polite">
+            <div class="question-type"><span id="questionIcon">＋</span><span id="questionType">算一算</span></div>
+            <div class="question-text" id="questionText">3 + 4 = ?</div>
+            <p class="question-prompt" id="questionPrompt">选择正确答案</p>
+            <div class="answer-grid" id="answerGrid"></div>
+            <div class="feedback" id="feedback" role="status">
+              <span class="feedback-icon" aria-hidden="true"></span>
+              <span class="feedback-text"></span>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="resultScreen" class="screen result-screen" aria-labelledby="resultTitle">
+        <div class="result-rays" aria-hidden="true"></div>
+        <div class="result-planet" id="resultPlanet" aria-hidden="true"></div>
+        <p class="eyebrow" id="resultEyebrow">任务完成</p>
+        <h1 id="resultTitle">漂亮着陆！</h1>
+        <p id="resultMessage">你已经掌握了 10 以内加法</p>
+        <div class="result-stars" id="resultStars" aria-label="获得星星"></div>
+        <div class="result-stats">
+          <div><span>◆</span><strong id="resultScore">0</strong><small>本关积分</small></div>
+          <div><span>◎</span><strong id="resultAccuracy">0%</strong><small>首次正确率</small></div>
+          <div><span>⚡</span><strong id="resultStreak">0</strong><small>最长连对</small></div>
+        </div>
+        <div class="result-actions">
+          <button class="secondary-button" id="retryButton"><span aria-hidden="true">↻</span>再练一次</button>
+          <button class="primary-button" id="nextButton">下一关<span aria-hidden="true">›</span></button>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>每一次思考，都是一次小小的升空</span>
+      <span>学习记录仅保存在本设备</span>
+    </footer>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="record-drawer" id="recordDrawer" aria-labelledby="recordTitle" aria-hidden="true" inert>
+    <div class="drawer-head">
+      <div><p class="eyebrow">航天员成长中心</p><h2 id="recordTitle">我的学习档案</h2></div>
+      <button class="icon-button close-button" id="closeDrawer" aria-label="关闭学习档案">×</button>
+    </div>
+    <div class="record-summary" id="recordSummary"></div>
+    <section class="achievement-section">
+      <h3>任务徽章</h3>
+      <div class="badge-list" id="badgeList"></div>
+    </section>
+    <section class="history-section">
+      <div class="section-title"><h3>最近练习</h3><span id="historyCount"></span></div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+    <button class="text-button danger-text" id="resetProgress">清空本机学习记录</button>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

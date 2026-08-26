@@ -230,6 +230,75 @@
       object-position: center 38%;
     }
 
+    .space-math-preview {
+      grid-template-columns: 1fr;
+      background: #071b2b;
+      background-image:
+        radial-gradient(circle at 16% 24%, rgba(255, 255, 255, 0.92) 0 2px, transparent 3px),
+        radial-gradient(circle at 82% 18%, rgba(241, 202, 81, 0.9) 0 2px, transparent 3px),
+        radial-gradient(circle at 73% 78%, rgba(255, 255, 255, 0.72) 0 1px, transparent 2px);
+    }
+
+    .space-math-scene {
+      position: relative;
+      width: min(340px, 100%);
+      height: 100%;
+      margin: 0 auto;
+    }
+
+    .space-planet {
+      position: absolute;
+      left: 12px;
+      bottom: 7px;
+      width: 116px;
+      aspect-ratio: 1;
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 27%, #f7fbff 0 7%, transparent 8%),
+        radial-gradient(circle at 68% 64%, rgba(24, 33, 39, 0.2) 0 12%, transparent 13%),
+        #59c7f2;
+      box-shadow: inset -12px -10px 0 rgba(24, 33, 39, 0.15), 5px 6px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    .space-planet::after {
+      content: "";
+      position: absolute;
+      left: -23px;
+      top: 49px;
+      width: 150px;
+      height: 30px;
+      border: 8px solid var(--yellow);
+      border-top-color: transparent;
+      border-radius: 50%;
+      transform: rotate(-10deg);
+    }
+
+    .space-equation {
+      position: absolute;
+      top: 31px;
+      right: 5px;
+      min-width: 190px;
+      padding: 13px 16px;
+      border: 3px solid var(--ink);
+      border-radius: 6px;
+      color: var(--ink);
+      background: var(--white);
+      box-shadow: 5px 5px 0 var(--orange);
+      font-size: 31px;
+      font-weight: 950;
+      text-align: center;
+    }
+
+    .space-rocket {
+      position: absolute;
+      right: 27px;
+      bottom: 16px;
+      font-size: 52px;
+      line-height: 1;
+      transform: rotate(-12deg);
+    }
+
     .hand-disc {
       width: 128px;
       max-width: 100%;
@@ -431,10 +500,37 @@
       <section aria-labelledby="games-heading">
         <div class="section-heading">
           <h2 id="games-heading">游戏</h2>
-          <span class="count">2 个作品</span>
+          <span class="count">3 个作品</span>
         </div>
 
         <div class="game-list">
+          <a class="game-card" href="./games/space-math-adventure/index.html" aria-label="打开太空数学闯关游戏">
+            <div class="game-preview space-math-preview" aria-hidden="true">
+              <div class="space-math-scene">
+                <span class="space-planet"></span>
+                <span class="space-equation">8 + 7 = ?</span>
+                <span class="space-rocket">🚀</span>
+              </div>
+            </div>
+            <div class="game-body">
+              <div class="game-copy">
+                <h3 class="game-title">太空数学闯关</h3>
+                <p class="game-description">完成加减法和逻辑任务，收集星星，逐步解锁月球、火星与土星。</p>
+                <div class="tags" aria-label="游戏特性">
+                  <span class="tag">6—9 岁</span>
+                  <span class="tag">Pad 适配</span>
+                  <span class="tag">学习记录</span>
+                </div>
+              </div>
+              <span class="open-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 19 19 5"></path>
+                  <path d="M9 5h10v10"></path>
+                </svg>
+              </span>
+            </div>
+          </a>
+
           <a class="game-card" href="./games/rock-paper-scissors/index.html" aria-label="打开来猜拳游戏">
             <div class="game-preview" aria-hidden="true">
               <span class="hand-disc">✊</span>
