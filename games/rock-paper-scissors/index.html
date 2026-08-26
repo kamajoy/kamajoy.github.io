@@ -1,0 +1,1065 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f0e8">
+  <meta name="description" content="一个适合电脑和 Pad 的石头剪刀布小游戏">
+  <title>来猜拳</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f3f0e8;
+      --paper-deep: #e7e1d5;
+      --ink: #172027;
+      --muted: #647077;
+      --line: #c9c3b8;
+      --orange: #f05a28;
+      --orange-dark: #c83b16;
+      --blue: #087e8b;
+      --blue-dark: #075f68;
+      --yellow: #f1c84b;
+      --white: #fffef9;
+      --shadow: 0 8px 0 rgba(23, 32, 39, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      min-height: 100%;
+      background: var(--paper);
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100dvh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(rgba(23, 32, 39, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 32, 39, 0.045) 1px, transparent 1px);
+      background-size: 28px 28px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      display: grid;
+      grid-template-rows: auto auto minmax(310px, 1fr) auto;
+      gap: 16px;
+    }
+
+    .topbar {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 3px 3px 0 var(--ink);
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 900;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      color: var(--ink);
+      background: var(--white);
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+    }
+
+    .icon-button:hover {
+      background: var(--yellow);
+    }
+
+    .icon-button:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 var(--ink);
+    }
+
+    .icon-button:focus-visible,
+    .choice:focus-visible {
+      outline: 4px solid rgba(8, 126, 139, 0.35);
+      outline-offset: 3px;
+    }
+
+    .icon-button svg {
+      width: 21px;
+      height: 21px;
+      stroke-width: 2.3;
+    }
+
+    .scoreboard {
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .score-block {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 20px;
+    }
+
+    .score-block.system {
+      flex-direction: row-reverse;
+    }
+
+    .score-label {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .score-number {
+      min-width: 1ch;
+      color: var(--blue);
+      font-size: 34px;
+      font-weight: 950;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+
+    .system .score-number {
+      color: var(--orange);
+    }
+
+    .draw-count {
+      align-self: stretch;
+      min-width: 88px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      border-inline: 2px solid var(--ink);
+      background: var(--paper-deep);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .draw-count strong {
+      color: var(--ink);
+      font-size: 19px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .arena {
+      min-height: 310px;
+      display: grid;
+      grid-template-columns: 1fr minmax(160px, 0.55fr) 1fr;
+      align-items: center;
+      gap: clamp(12px, 3vw, 36px);
+      padding: clamp(12px, 2.5vw, 28px) 0;
+    }
+
+    .fighter {
+      min-width: 0;
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+
+    .fighter-name {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .hand-stage {
+      width: min(100%, 270px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .hand-stage::before {
+      content: "";
+      position: absolute;
+      inset: 9%;
+      z-index: -1;
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 9px 9px 0 var(--ink);
+    }
+
+    .fighter.system .hand-stage::before {
+      background: var(--orange);
+    }
+
+    .hand {
+      display: inline-block;
+      font-size: clamp(82px, 13vw, 148px);
+      line-height: 1;
+      filter: drop-shadow(0 8px 0 rgba(23, 32, 39, 0.22));
+      transform: rotate(-8deg);
+      transform-origin: 50% 75%;
+      user-select: none;
+    }
+
+    .system .hand {
+      transform: scaleX(-1) rotate(-8deg);
+    }
+
+    .hand.thinking {
+      animation: player-bounce 340ms ease-in-out infinite alternate;
+    }
+
+    .system .hand.thinking {
+      animation-name: system-bounce;
+    }
+
+    @keyframes player-bounce {
+      from { transform: translateY(-2px) rotate(-8deg); }
+      to { transform: translateY(16px) rotate(7deg); }
+    }
+
+    @keyframes system-bounce {
+      from { transform: translateY(-2px) scaleX(-1) rotate(-8deg); }
+      to { transform: translateY(16px) scaleX(-1) rotate(7deg); }
+    }
+
+    .result-panel {
+      min-width: 150px;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 9px;
+      text-align: center;
+    }
+
+    .round-number {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .result-badge {
+      width: clamp(126px, 16vw, 164px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 7px 7px 0 var(--ink);
+      transform: rotate(-2deg);
+    }
+
+    .result-badge.win {
+      background: #8ed7b0;
+    }
+
+    .result-badge.lose {
+      background: #f39474;
+    }
+
+    .result-badge.draw {
+      background: var(--yellow);
+    }
+
+    .result-title {
+      max-width: 120px;
+      font-size: clamp(24px, 3.2vw, 38px);
+      font-weight: 950;
+      line-height: 1.04;
+    }
+
+    .result-detail {
+      min-height: 40px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .choice-zone {
+      padding-top: 14px;
+      border-top: 2px solid var(--ink);
+    }
+
+    .choice-heading {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .choice {
+      min-width: 0;
+      min-height: 94px;
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 2vw, 16px);
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      padding: 12px;
+      color: var(--ink);
+      background: var(--white);
+      box-shadow: 5px 5px 0 var(--ink);
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+    }
+
+    .choice:hover {
+      background: #fff1c3;
+      transform: translateY(-3px);
+      box-shadow: 5px 8px 0 var(--ink);
+    }
+
+    .choice:active {
+      transform: translate(5px, 5px);
+      box-shadow: 0 0 0 var(--ink);
+    }
+
+    .choice:disabled {
+      cursor: wait;
+      opacity: 0.56;
+      transform: none;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+
+    .choice-emoji {
+      width: 60px;
+      height: 60px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--paper-deep);
+      font-size: 36px;
+      line-height: 1;
+    }
+
+    .choice:nth-child(2) .choice-emoji {
+      background: #a8dce1;
+    }
+
+    .choice:nth-child(3) .choice-emoji {
+      background: #f5a788;
+    }
+
+    .choice-text {
+      display: grid;
+      text-align: left;
+    }
+
+    .choice-text strong {
+      font-size: clamp(17px, 2vw, 22px);
+      font-weight: 950;
+    }
+
+    .history-bar {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .history-label {
+      margin-right: 2px;
+    }
+
+    .history-dot {
+      width: 23px;
+      height: 23px;
+      display: grid;
+      place-items: center;
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      color: var(--ink);
+      background: var(--paper-deep);
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .history-dot.win { background: #8ed7b0; }
+    .history-dot.lose { background: #f39474; }
+    .history-dot.draw { background: var(--yellow); }
+
+    .empty-history {
+      color: #879096;
+      font-weight: 650;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(22px, env(safe-area-inset-bottom));
+      z-index: 10;
+      padding: 9px 14px;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      color: var(--white);
+      background: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .toast.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        grid-template-rows: auto auto auto auto;
+        gap: 12px;
+        padding-inline: 14px;
+      }
+
+      .scoreboard {
+        min-height: 64px;
+      }
+
+      .score-block {
+        gap: 7px;
+        padding: 10px;
+      }
+
+      .score-number {
+        font-size: 28px;
+      }
+
+      .draw-count {
+        min-width: 66px;
+      }
+
+      .arena {
+        min-height: 310px;
+        grid-template-columns: 1fr 100px 1fr;
+        gap: 6px;
+        padding-block: 8px;
+      }
+
+      .hand-stage {
+        width: min(100%, 190px);
+      }
+
+      .hand-stage::before {
+        box-shadow: 5px 5px 0 var(--ink);
+      }
+
+      .hand {
+        font-size: clamp(62px, 20vw, 102px);
+      }
+
+      .result-panel {
+        min-width: 0;
+      }
+
+      .result-badge {
+        width: 88px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+
+      .result-title {
+        max-width: 78px;
+        font-size: 21px;
+      }
+
+      .result-detail {
+        max-width: 100px;
+        min-height: 34px;
+        font-size: 11px;
+      }
+
+      .choices {
+        gap: 8px;
+      }
+
+      .choice {
+        min-height: 91px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 5px;
+        padding: 8px 5px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+
+      .choice:hover {
+        transform: none;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+
+      .choice:active {
+        transform: translate(3px, 3px);
+        box-shadow: 0 0 0 var(--ink);
+      }
+
+      .choice-emoji {
+        width: 46px;
+        height: 46px;
+        font-size: 27px;
+      }
+
+      .choice-text {
+        text-align: center;
+      }
+
+    }
+
+    @media (max-width: 430px) {
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+        font-size: 20px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .score-label {
+        font-size: 12px;
+      }
+
+      .arena {
+        min-height: 270px;
+        grid-template-columns: 1fr 82px 1fr;
+      }
+
+      .fighter {
+        gap: 7px;
+      }
+
+      .result-badge {
+        width: 72px;
+      }
+
+      .result-title {
+        max-width: 62px;
+        font-size: 18px;
+      }
+
+      .result-detail {
+        max-width: 82px;
+      }
+
+      .choice-heading {
+        margin-bottom: 9px;
+      }
+
+      .choice {
+        min-height: 82px;
+      }
+
+      .choice-emoji {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+      }
+
+      .choice-text strong {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-height: 650px) and (min-width: 721px) {
+      .app {
+        grid-template-rows: auto auto minmax(225px, 1fr) auto;
+        gap: 10px;
+        padding-block: 10px;
+      }
+
+      .topbar {
+        min-height: 45px;
+        padding-bottom: 7px;
+      }
+
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand-mark {
+        flex-basis: 38px;
+      }
+
+      .scoreboard {
+        min-height: 58px;
+      }
+
+      .arena {
+        min-height: 225px;
+        padding-block: 4px;
+      }
+
+      .hand-stage {
+        width: min(100%, 190px);
+      }
+
+      .hand {
+        font-size: 100px;
+      }
+
+      .result-badge {
+        width: 104px;
+      }
+
+      .result-title {
+        font-size: 24px;
+      }
+
+      .choice-zone {
+        padding-top: 9px;
+      }
+
+      .choice-heading {
+        margin-bottom: 8px;
+      }
+
+      .choice {
+        min-height: 74px;
+      }
+
+      .choice-emoji {
+        width: 48px;
+        height: 48px;
+        font-size: 29px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">✌️</div>
+        <h1>来猜拳</h1>
+      </div>
+      <div class="toolbar" aria-label="游戏工具">
+        <button class="icon-button" id="soundButton" type="button" aria-label="关闭声音" title="关闭声音" aria-pressed="true">
+          <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H2v6h4l5 4z"></path>
+            <path class="sound-wave" d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+            <path class="sound-wave" d="M18 6a8.5 8.5 0 0 1 0 12"></path>
+          </svg>
+        </button>
+        <button class="icon-button" id="resetButton" type="button" aria-label="重新计分" title="重新计分">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="scoreboard" aria-label="比分">
+      <div class="score-block">
+        <span class="score-label">你</span>
+        <strong class="score-number" id="playerScore">0</strong>
+      </div>
+      <div class="draw-count">
+        平局
+        <strong id="drawScore">0</strong>
+      </div>
+      <div class="score-block system">
+        <span class="score-label">电脑</span>
+        <strong class="score-number" id="systemScore">0</strong>
+      </div>
+    </section>
+
+    <section class="arena" aria-label="对战区">
+      <div class="fighter player">
+        <p class="fighter-name">你的出拳</p>
+        <div class="hand-stage">
+          <span class="hand" id="playerHand" aria-label="等待出拳">✊</span>
+        </div>
+      </div>
+
+      <div class="result-panel" aria-live="polite" aria-atomic="true">
+        <span class="round-number" id="roundNumber">准备好了吗</span>
+        <div class="result-badge" id="resultBadge">
+          <strong class="result-title" id="resultTitle">选一个</strong>
+        </div>
+        <p class="result-detail" id="resultDetail">电脑已经就位</p>
+      </div>
+
+      <div class="fighter system">
+        <p class="fighter-name">电脑出拳</p>
+        <div class="hand-stage">
+          <span class="hand" id="systemHand" aria-label="等待出拳">✊</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="choice-zone" aria-labelledby="choiceHeading">
+      <h2 class="choice-heading" id="choiceHeading">选择你的出拳</h2>
+      <div class="choices">
+        <button class="choice" type="button" data-choice="rock" aria-keyshortcuts="1">
+          <span class="choice-emoji" aria-hidden="true">✊</span>
+          <span class="choice-text">
+            <strong>石头</strong>
+          </span>
+        </button>
+        <button class="choice" type="button" data-choice="scissors" aria-keyshortcuts="2">
+          <span class="choice-emoji" aria-hidden="true">✌️</span>
+          <span class="choice-text">
+            <strong>剪刀</strong>
+          </span>
+        </button>
+        <button class="choice" type="button" data-choice="paper" aria-keyshortcuts="3">
+          <span class="choice-emoji" aria-hidden="true">✋</span>
+          <span class="choice-text">
+            <strong>布</strong>
+          </span>
+        </button>
+      </div>
+      <div class="history-bar" id="historyBar" aria-label="最近战绩">
+        <span class="history-label">最近</span>
+        <span class="empty-history">还没有对局</span>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">比分已重置</div>
+
+  <script>
+    (() => {
+      const choices = {
+        rock: { label: "石头", emoji: "✊" },
+        scissors: { label: "剪刀", emoji: "✌️" },
+        paper: { label: "布", emoji: "✋" }
+      };
+      const choiceKeys = Object.keys(choices);
+      const winsAgainst = { rock: "scissors", scissors: "paper", paper: "rock" };
+      const storageKey = "rps-score-v1";
+
+      const els = {
+        playerScore: document.querySelector("#playerScore"),
+        systemScore: document.querySelector("#systemScore"),
+        drawScore: document.querySelector("#drawScore"),
+        playerHand: document.querySelector("#playerHand"),
+        systemHand: document.querySelector("#systemHand"),
+        resultBadge: document.querySelector("#resultBadge"),
+        resultTitle: document.querySelector("#resultTitle"),
+        resultDetail: document.querySelector("#resultDetail"),
+        roundNumber: document.querySelector("#roundNumber"),
+        historyBar: document.querySelector("#historyBar"),
+        resetButton: document.querySelector("#resetButton"),
+        soundButton: document.querySelector("#soundButton"),
+        soundIcon: document.querySelector("#soundIcon"),
+        toast: document.querySelector("#toast"),
+        choiceButtons: [...document.querySelectorAll(".choice")]
+      };
+
+      let state = loadState();
+      let busy = false;
+      let soundEnabled = true;
+      let audioContext = null;
+      let toastTimer = null;
+
+      function blankState() {
+        return { player: 0, system: 0, draws: 0, rounds: 0, history: [] };
+      }
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey));
+          if (!saved || typeof saved !== "object") return blankState();
+          return {
+            player: Number.isFinite(saved.player) ? Math.max(0, saved.player) : 0,
+            system: Number.isFinite(saved.system) ? Math.max(0, saved.system) : 0,
+            draws: Number.isFinite(saved.draws) ? Math.max(0, saved.draws) : 0,
+            rounds: Number.isFinite(saved.rounds) ? Math.max(0, saved.rounds) : 0,
+            history: Array.isArray(saved.history) ? saved.history.slice(0, 5) : []
+          };
+        } catch (_) {
+          return blankState();
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        } catch (_) {
+          // The game remains fully usable when storage is unavailable.
+        }
+      }
+
+      function randomChoice() {
+        if (window.crypto && window.crypto.getRandomValues) {
+          const max = Math.floor(0x100000000 / choiceKeys.length) * choiceKeys.length;
+          const sample = new Uint32Array(1);
+          do {
+            window.crypto.getRandomValues(sample);
+          } while (sample[0] >= max);
+          return choiceKeys[sample[0] % choiceKeys.length];
+        }
+        return choiceKeys[Math.floor(Math.random() * choiceKeys.length)];
+      }
+
+      function outcomeFor(playerChoice, systemChoice) {
+        if (playerChoice === systemChoice) return "draw";
+        return winsAgainst[playerChoice] === systemChoice ? "win" : "lose";
+      }
+
+      function renderScore() {
+        els.playerScore.textContent = state.player;
+        els.systemScore.textContent = state.system;
+        els.drawScore.textContent = state.draws;
+      }
+
+      function renderHistory() {
+        const labels = { win: "胜", lose: "负", draw: "平" };
+        els.historyBar.replaceChildren();
+
+        const title = document.createElement("span");
+        title.className = "history-label";
+        title.textContent = "最近";
+        els.historyBar.appendChild(title);
+
+        if (!state.history.length) {
+          const empty = document.createElement("span");
+          empty.className = "empty-history";
+          empty.textContent = "还没有对局";
+          els.historyBar.appendChild(empty);
+          return;
+        }
+
+        state.history.forEach((item) => {
+          const dot = document.createElement("span");
+          dot.className = `history-dot ${item}`;
+          dot.textContent = labels[item];
+          dot.title = labels[item];
+          els.historyBar.appendChild(dot);
+        });
+      }
+
+      function setBusy(value) {
+        busy = value;
+        els.choiceButtons.forEach((button) => {
+          button.disabled = value;
+        });
+      }
+
+      function playTone(outcome) {
+        if (!soundEnabled) return;
+        try {
+          audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+          const now = audioContext.currentTime;
+          const notes = outcome === "win" ? [523, 659, 784] : outcome === "lose" ? [330, 277] : [440, 440];
+          notes.forEach((frequency, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = "triangle";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, now + index * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.09, now + index * 0.1 + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.1 + 0.12);
+            oscillator.connect(gain).connect(audioContext.destination);
+            oscillator.start(now + index * 0.1);
+            oscillator.stop(now + index * 0.1 + 0.13);
+          });
+        } catch (_) {
+          // Some browsers disallow Web Audio; gameplay does not depend on it.
+        }
+      }
+
+      function revealResult(playerChoice, systemChoice) {
+        const outcome = outcomeFor(playerChoice, systemChoice);
+        const resultCopy = {
+          win: { title: "你赢了!", detail: "漂亮的一手", className: "win" },
+          lose: { title: "电脑赢", detail: "再来一局扳回来", className: "lose" },
+          draw: { title: "平局", detail: "想法撞到一起了", className: "draw" }
+        }[outcome];
+
+        els.playerHand.textContent = choices[playerChoice].emoji;
+        els.playerHand.setAttribute("aria-label", choices[playerChoice].label);
+        els.systemHand.textContent = choices[systemChoice].emoji;
+        els.systemHand.setAttribute("aria-label", choices[systemChoice].label);
+        els.playerHand.classList.remove("thinking");
+        els.systemHand.classList.remove("thinking");
+
+        state.rounds += 1;
+        if (outcome === "win") state.player += 1;
+        if (outcome === "lose") state.system += 1;
+        if (outcome === "draw") state.draws += 1;
+        state.history.unshift(outcome);
+        state.history = state.history.slice(0, 5);
+
+        els.roundNumber.textContent = `第 ${state.rounds} 局`;
+        els.resultTitle.textContent = resultCopy.title;
+        els.resultDetail.textContent = `${choices[playerChoice].label} 对 ${choices[systemChoice].label} · ${resultCopy.detail}`;
+        els.resultBadge.className = `result-badge ${resultCopy.className}`;
+
+        renderScore();
+        renderHistory();
+        saveState();
+        playTone(outcome);
+        setBusy(false);
+      }
+
+      function play(playerChoice) {
+        if (busy || !choices[playerChoice]) return;
+        setBusy(true);
+
+        const systemChoice = randomChoice();
+        els.resultBadge.className = "result-badge";
+        els.resultTitle.textContent = "出拳!";
+        els.resultDetail.textContent = "石头 · 剪刀 · 布";
+        els.roundNumber.textContent = `第 ${state.rounds + 1} 局`;
+        els.playerHand.textContent = "✊";
+        els.systemHand.textContent = "✊";
+        els.playerHand.classList.add("thinking");
+        els.systemHand.classList.add("thinking");
+
+        window.setTimeout(() => revealResult(playerChoice, systemChoice), 720);
+      }
+
+      function showToast(message) {
+        window.clearTimeout(toastTimer);
+        els.toast.textContent = message;
+        els.toast.classList.add("show");
+        toastTimer = window.setTimeout(() => els.toast.classList.remove("show"), 1500);
+      }
+
+      function resetGame() {
+        if (busy) return;
+        state = blankState();
+        saveState();
+        renderScore();
+        renderHistory();
+        els.playerHand.textContent = "✊";
+        els.systemHand.textContent = "✊";
+        els.playerHand.setAttribute("aria-label", "等待出拳");
+        els.systemHand.setAttribute("aria-label", "等待出拳");
+        els.resultBadge.className = "result-badge";
+        els.resultTitle.textContent = "选一个";
+        els.resultDetail.textContent = "电脑已经就位";
+        els.roundNumber.textContent = "准备好了吗";
+        showToast("比分已重置");
+      }
+
+      function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const label = soundEnabled ? "关闭声音" : "打开声音";
+        els.soundButton.setAttribute("aria-label", label);
+        els.soundButton.setAttribute("title", label);
+        els.soundButton.setAttribute("aria-pressed", String(soundEnabled));
+        els.soundIcon.querySelectorAll(".sound-wave").forEach((wave) => {
+          wave.style.display = soundEnabled ? "" : "none";
+        });
+        showToast(soundEnabled ? "声音已打开" : "声音已关闭");
+      }
+
+      els.choiceButtons.forEach((button) => {
+        button.addEventListener("click", () => play(button.dataset.choice));
+      });
+      els.resetButton.addEventListener("click", resetGame);
+      els.soundButton.addEventListener("click", toggleSound);
+      document.addEventListener("keydown", (event) => {
+        if (event.repeat) return;
+        const shortcuts = { "1": "rock", "2": "scissors", "3": "paper" };
+        if (shortcuts[event.key]) play(shortcuts[event.key]);
+      });
+
+      renderScore();
+      renderHistory();
+      if (state.rounds > 0) {
+        els.roundNumber.textContent = `已进行 ${state.rounds} 局`;
+      }
+    })();
+  </script>
+</body>
+</html>
