@@ -16,6 +16,12 @@
     grid: { color: "#f4faff" },
     story: { color: "#fff6e8" }
   });
+  const ART = window.NOMI_ART || { illustrations: [], scenes: [], dataUrl: () => "" };
+  const PROMPT_PARTS = Object.freeze({
+    heroes: ["一只会飞的小猫", "一个害羞的机器人", "一条迷路的小飞龙", "一位恐龙侦探", "一只住在云里的鲸鱼", "一个会说话的冰淇淋"],
+    places: ["在月亮游乐园", "在会发光的海底城", "在漂浮的糖果岛", "在一座倒着生长的森林", "在恐龙学校", "在彩虹尽头的城堡"],
+    quests: ["寻找会唱歌的星星", "举办一场奇妙派对", "发明从没见过的交通工具", "帮助新朋友找到家", "发现一扇秘密小门", "完成一次超级探险"]
+  });
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 4;
 
@@ -35,9 +41,11 @@
   let history = [];
   let historyIndex = -1;
   let internalClipboard = null;
+  let creativePrompt = "";
   const imageCache = new Map();
   const activePointers = new Map();
   const viewport = { x: 0, y: 0, scale: 1 };
+  const canvasViewportSize = { width: 0, height: 0 };
   const style = { color: "#20221f", width: 3, fill: false };
 
   const controls = {
@@ -65,6 +73,10 @@
     zoomLabel: $("#zoomResetButton"),
     stampMenu: $("#stampMenu"),
     paperMenu: $("#paperMenu"),
+    creativeButton: $("#creativeButton"),
+    creativePanel: $("#creativePanel"),
+    creativePrompt: $("#creativePrompt"),
+    confettiLayer: $("#confettiLayer"),
     paperButton: $("#paperButton"),
     prevPage: $("#prevPageButton"),
     nextPage: $("#nextPageButton"),
@@ -110,6 +122,16 @@
 
   function resizeCanvas() {
     const rect = workspace.getBoundingClientRect();
+    if (canvasViewportSize.width && canvasViewportSize.height && (rect.width !== canvasViewportSize.width || rect.height !== canvasViewportSize.height)) {
+      const centerWorld = {
+        x: (canvasViewportSize.width / 2 - viewport.x) / viewport.scale,
+        y: (canvasViewportSize.height / 2 - viewport.y) / viewport.scale
+      };
+      viewport.x = rect.width / 2 - centerWorld.x * viewport.scale;
+      viewport.y = rect.height / 2 - centerWorld.y * viewport.scale;
+    }
+    canvasViewportSize.width = rect.width;
+    canvasViewportSize.height = rect.height;
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     const width = Math.max(1, Math.round(rect.width * dpr));
     const height = Math.max(1, Math.round(rect.height * dpr));
@@ -380,6 +402,7 @@
     commitTextEditor();
     tool = nextTool;
     if (tool !== "stamp") controls.stampMenu.hidden = true;
+    closeCreativePanel();
     if (tool !== "select") setSelected(null);
     $$("[data-tool]").forEach((button) => button.classList.toggle("active", button.dataset.tool === tool));
     updateCursor();
@@ -447,6 +470,7 @@
 
   function findHit(point) {
     for (let index = elements.length - 1; index >= 0; index -= 1) {
+      if (elements[index].locked) continue;
       if (hitElement(elements[index], point)) return elements[index];
     }
     return null;
@@ -503,8 +527,8 @@
 
   function eraseAt(point) {
     const before = elements.length;
-    const selectedWasRemoved = elements.some((element) => element.id === selectedId && hitElement(element, point));
-    elements = elements.filter((element) => !hitElement(element, point));
+    const selectedWasRemoved = elements.some((element) => !element.locked && element.id === selectedId && hitElement(element, point));
+    elements = elements.filter((element) => element.locked || !hitElement(element, point));
     if (elements.length !== before) {
       interaction.erased = true;
       if (selectedWasRemoved) setSelected(null);
@@ -906,6 +930,7 @@
       pages,
       currentPageIndex,
       viewport,
+      viewportSize: { width: workspace.clientWidth, height: workspace.clientHeight },
       gridVisible
     };
     try {
@@ -940,6 +965,10 @@
       currentPaper = pages[currentPageIndex].paper || "dots";
       controls.boardTitle.value = saved?.title || "未命名白板";
       if (saved?.viewport) Object.assign(viewport, saved.viewport);
+      if (saved?.viewportSize) {
+        canvasViewportSize.width = Number(saved.viewportSize.width) || 0;
+        canvasViewportSize.height = Number(saved.viewportSize.height) || 0;
+      }
       gridVisible = saved?.gridVisible !== false;
       controls.gridButton.setAttribute("aria-pressed", String(gridVisible));
       updateZoomLabel();
@@ -957,6 +986,174 @@
     $("span", controls.toast).textContent = message;
     controls.toast.hidden = false;
     toastTimer = window.setTimeout(() => { controls.toast.hidden = true; }, 2200);
+  }
+
+  function closeCreativePanel() {
+    controls.creativePanel.hidden = true;
+    controls.creativeButton.classList.remove("active");
+    controls.creativeButton.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleCreativePanel() {
+    const shouldOpen = controls.creativePanel.hidden;
+    controls.stampMenu.hidden = true;
+    controls.paperMenu.hidden = true;
+    controls.creativePanel.hidden = !shouldOpen;
+    controls.creativeButton.classList.toggle("active", shouldOpen);
+    controls.creativeButton.setAttribute("aria-expanded", String(shouldOpen));
+  }
+
+  function switchCreativeTab(tab) {
+    $$('[data-creative-tab]').forEach((button) => button.setAttribute("aria-selected", String(button.dataset.creativeTab === tab)));
+    $$('[data-creative-view]').forEach((view) => { view.hidden = view.dataset.creativeView !== tab; });
+    if (tab === "surprise" && !creativePrompt) newCreativePrompt();
+  }
+
+  function initializeCreativePanel() {
+    const collections = [
+      { selector: "[data-art]", items: ART.illustrations, key: "art" },
+      { selector: "[data-scene]", items: ART.scenes, key: "scene" }
+    ];
+    collections.forEach(({ selector, items, key }) => {
+      $$(selector).forEach((button) => {
+        const item = items.find((entry) => entry.id === button.dataset[key]);
+        const preview = $(key === "art" ? ".art-preview" : ".scene-preview", button);
+        if (!item || !preview) {
+          button.hidden = true;
+          return;
+        }
+        const image = new Image();
+        image.alt = "";
+        image.decoding = "async";
+        image.src = ART.dataUrl(item);
+        preview.replaceChildren(image);
+      });
+    });
+  }
+
+  function createIllustrationElement(item, center, width = 184) {
+    const height = width * (140 / 180);
+    return {
+      id: uid(),
+      type: "image",
+      src: ART.dataUrl(item),
+      x: center.x - width / 2,
+      y: center.y - height / 2,
+      w: width,
+      h: height,
+      assetId: `illustration:${item.id}`
+    };
+  }
+
+  function insertIllustration(id) {
+    const item = ART.illustrations.find((entry) => entry.id === id);
+    if (!item) return;
+    const center = worldPoint({ x: workspace.clientWidth / 2, y: workspace.clientHeight / 2 });
+    const element = createIllustrationElement(item, center);
+    elements.push(element);
+    closeCreativePanel();
+    setTool("select");
+    setSelected(element.id);
+    commitHistory();
+    celebrate();
+    showToast(`${item.label}已加入画本`);
+  }
+
+  function addScenePage(id) {
+    const item = ART.scenes.find((entry) => entry.id === id);
+    if (!item) return;
+    if (pages.length >= 24) {
+      showToast("一本画本最多 24 页");
+      return;
+    }
+    commitTextEditor();
+    syncCurrentPage();
+    const scene = {
+      id: uid(), type: "image", src: ART.dataUrl(item),
+      x: 0, y: 0, w: 900, h: 560,
+      assetId: `scene:${item.id}`, locked: true
+    };
+    const newIndex = currentPageIndex + 1;
+    pages.splice(newIndex, 0, createPage([scene], "blank"));
+    currentPageIndex = newIndex;
+    elements = pages[currentPageIndex].elements;
+    currentPaper = "blank";
+    closeCreativePanel();
+    setTool("select");
+    setSelected(null);
+    resetPageHistory();
+    updatePageControls();
+    updatePaperControls();
+    fitContent();
+    celebrate();
+    showToast(`${item.label}新画页已准备好`);
+  }
+
+  function randomItem(items) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function newCreativePrompt() {
+    let next = creativePrompt;
+    for (let tries = 0; tries < 5 && next === creativePrompt; tries += 1) {
+      next = `${randomItem(PROMPT_PARTS.heroes)}，${randomItem(PROMPT_PARTS.places)}，${randomItem(PROMPT_PARTS.quests)}。`;
+    }
+    creativePrompt = next;
+    controls.creativePrompt.textContent = creativePrompt;
+  }
+
+  function addPromptToPage() {
+    if (!creativePrompt) newCreativePrompt();
+    const center = worldPoint({ x: workspace.clientWidth / 2, y: workspace.clientHeight / 2 });
+    const wrappedPrompt = creativePrompt.replace(/，/g, "，\n");
+    const element = {
+      id: uid(), type: "sticky", text: `创意任务\n${wrappedPrompt}`,
+      x: center.x - 145, y: center.y - 82, w: 290, h: 164,
+      color: "#34403a", fill: "#fff0b8", fontSize: 17, fontWeight: 600
+    };
+    elements.push(element);
+    closeCreativePanel();
+    setTool("select");
+    setSelected(element.id);
+    commitHistory();
+    celebrate();
+    showToast("创意任务已放进画本");
+  }
+
+  function insertSurpriseArt() {
+    const choices = [...ART.illustrations].sort(() => Math.random() - 0.5).slice(0, 3);
+    if (!choices.length) return;
+    const center = worldPoint({ x: workspace.clientWidth / 2, y: workspace.clientHeight / 2 });
+    const offsets = [[-190, -170], [0, 150], [190, -170]];
+    const created = choices.map((item, index) => createIllustrationElement(item, {
+      x: center.x + offsets[index][0] / viewport.scale,
+      y: center.y + offsets[index][1] / viewport.scale
+    }, 140 / viewport.scale));
+    elements.push(...created);
+    closeCreativePanel();
+    setTool("select");
+    setSelected(created[created.length - 1].id);
+    commitHistory();
+    celebrate();
+    showToast("惊喜组合已出现");
+  }
+
+  function celebrate() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const colors = ["#167d5a", "#e85d3f", "#f2b84b", "#3366cc", "#e889ae", "#63b9c9"];
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 24; index += 1) {
+      const piece = document.createElement("i");
+      const angle = (Math.PI * 2 * index) / 24 + Math.random() * 0.24;
+      const distance = 90 + Math.random() * 180;
+      piece.style.setProperty("--confetti-color", colors[index % colors.length]);
+      piece.style.setProperty("--confetti-x", `${Math.cos(angle) * distance}px`);
+      piece.style.setProperty("--confetti-y", `${Math.sin(angle) * distance + 120}px`);
+      piece.style.setProperty("--confetti-r", `${Math.round(Math.random() * 720 - 360)}deg`);
+      fragment.append(piece);
+    }
+    controls.confettiLayer.replaceChildren(fragment);
+    window.setTimeout(() => controls.confettiLayer.replaceChildren(), 950);
   }
 
   function safeFilename(extension) {
@@ -1180,6 +1377,7 @@
     $("#stampButton").addEventListener("click", (event) => {
       event.stopPropagation();
       controls.paperMenu.hidden = true;
+      closeCreativePanel();
       controls.stampMenu.hidden = !controls.stampMenu.hidden;
     });
     $$("[data-stamp]").forEach((button) => button.addEventListener("click", (event) => {
@@ -1189,7 +1387,22 @@
       controls.stampMenu.hidden = true;
       setTool("stamp");
     }));
-    $("#imageButton").addEventListener("click", () => controls.imageInput.click());
+    controls.creativeButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleCreativePanel();
+    });
+    $("#creativeCloseButton").addEventListener("click", closeCreativePanel);
+    $$('[data-creative-tab]').forEach((button) => button.addEventListener("click", () => switchCreativeTab(button.dataset.creativeTab)));
+    $$('[data-art]').forEach((button) => button.addEventListener("click", () => insertIllustration(button.dataset.art)));
+    $$('[data-scene]').forEach((button) => button.addEventListener("click", () => addScenePage(button.dataset.scene)));
+    $("#newPromptButton").addEventListener("click", newCreativePrompt);
+    $("#addPromptButton").addEventListener("click", addPromptToPage);
+    $("#surpriseArtButton").addEventListener("click", insertSurpriseArt);
+
+    $("#imageButton").addEventListener("click", () => {
+      closeCreativePanel();
+      controls.imageInput.click();
+    });
     controls.imageInput.addEventListener("change", () => {
       insertImageFile(controls.imageInput.files[0]);
       controls.imageInput.value = "";
@@ -1235,6 +1448,7 @@
     controls.paperButton.addEventListener("click", (event) => {
       event.stopPropagation();
       controls.stampMenu.hidden = true;
+      closeCreativePanel();
       controls.paperMenu.hidden = !controls.paperMenu.hidden;
     });
     $$("[data-paper]").forEach((button) => button.addEventListener("click", (event) => {
@@ -1254,6 +1468,7 @@
 
     controls.exportButton.addEventListener("click", (event) => {
       event.stopPropagation();
+      closeCreativePanel();
       controls.exportMenu.hidden = !controls.exportMenu.hidden;
       controls.exportButton.setAttribute("aria-expanded", String(!controls.exportMenu.hidden));
     });
@@ -1271,6 +1486,7 @@
       }
       if (!event.target.closest("#stampMenu") && !event.target.closest("#stampButton")) controls.stampMenu.hidden = true;
       if (!event.target.closest("#paperMenu") && !event.target.closest("#paperButton")) controls.paperMenu.hidden = true;
+      if (!event.target.closest("#creativePanel") && !event.target.closest("#creativeButton")) closeCreativePanel();
     });
 
     controls.importButton.addEventListener("click", () => controls.jsonInput.click());
@@ -1345,6 +1561,7 @@
         setSelected(null);
         controls.stampMenu.hidden = true;
         controls.paperMenu.hidden = true;
+        closeCreativePanel();
       }
     });
     document.addEventListener("keyup", (event) => {
@@ -1376,6 +1593,8 @@
     updatePageControls();
     updatePaperControls();
     $$("[data-stamp]").forEach((button) => button.classList.toggle("selected", button.dataset.stamp === activeStamp));
+    initializeCreativePanel();
+    newCreativePrompt();
     syncStyleControls();
     bindEvents();
     resizeCanvas();
