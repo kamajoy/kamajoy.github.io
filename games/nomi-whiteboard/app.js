@@ -8,11 +8,22 @@
   const ctx = canvas.getContext("2d");
   const STORAGE_KEY = "nomi-whiteboard-v1";
   const SHAPE_TOOLS = new Set(["line", "arrow", "rectangle", "ellipse"]);
-  const DRAW_TOOLS = new Set(["pen", "highlighter", "line", "arrow", "rectangle", "ellipse", "text", "sticky"]);
+  const DRAW_TOOLS = new Set(["pen", "highlighter", "line", "arrow", "rectangle", "ellipse", "text", "sticky", "stamp"]);
+  const PAPER_STYLES = Object.freeze({
+    dots: { color: "#f7f7f5" },
+    blank: { color: "#ffffff" },
+    ruled: { color: "#fffdf8" },
+    grid: { color: "#f4faff" },
+    story: { color: "#fff6e8" }
+  });
   const MIN_SCALE = 0.2;
   const MAX_SCALE = 4;
 
   let elements = [];
+  let pages = [];
+  let currentPageIndex = 0;
+  let currentPaper = "dots";
+  let activeStamp = "⭐";
   let tool = "select";
   let selectedId = null;
   let interaction = null;
@@ -40,6 +51,7 @@
     importButton: $("#importButton"),
     clearButton: $("#clearButton"),
     clearDialog: $("#clearDialog"),
+    deletePageDialog: $("#deletePageDialog"),
     imageInput: $("#imageInput"),
     jsonInput: $("#jsonInput"),
     textEditor: $("#textEditor"),
@@ -48,8 +60,17 @@
     fillButton: $("#fillButton"),
     selectionActions: $("#selectionActions"),
     deleteButton: $("#deleteButton"),
+    duplicateButton: $("#duplicateButton"),
     gridButton: $("#gridButton"),
     zoomLabel: $("#zoomResetButton"),
+    stampMenu: $("#stampMenu"),
+    paperMenu: $("#paperMenu"),
+    paperButton: $("#paperButton"),
+    prevPage: $("#prevPageButton"),
+    nextPage: $("#nextPageButton"),
+    addPage: $("#addPageButton"),
+    deletePage: $("#deletePageButton"),
+    pageLabel: $("#pageLabel b"),
     toast: $("#toast")
   };
 
@@ -102,19 +123,51 @@
     render();
   }
 
-  function drawGrid(context, width, height) {
-    if (!gridVisible) return;
-    const base = 24;
-    const spacing = base * viewport.scale;
-    if (spacing < 8) return;
-    const startX = ((viewport.x % spacing) + spacing) % spacing;
-    const startY = ((viewport.y % spacing) + spacing) % spacing;
+  function drawPaper(context, width, height, paper = currentPaper, view = viewport) {
+    const theme = PAPER_STYLES[paper] || PAPER_STYLES.dots;
     context.save();
-    context.fillStyle = viewport.scale > 0.55 ? "rgba(118, 123, 116, 0.22)" : "rgba(118, 123, 116, 0.14)";
-    for (let x = startX; x < width; x += spacing) {
-      for (let y = startY; y < height; y += spacing) {
+    context.fillStyle = theme.color;
+    context.fillRect(0, 0, width, height);
+    if (!gridVisible || paper === "blank") {
+      context.restore();
+      return;
+    }
+    const base = paper === "ruled" ? 32 : paper === "story" ? 54 : 24;
+    const spacing = base * view.scale;
+    if (spacing < 8) {
+      context.restore();
+      return;
+    }
+    const startX = ((view.x % spacing) + spacing) % spacing;
+    const startY = ((view.y % spacing) + spacing) % spacing;
+    if (paper === "dots") {
+      context.fillStyle = view.scale > 0.55 ? "rgba(118, 123, 116, 0.22)" : "rgba(118, 123, 116, 0.14)";
+      for (let x = startX; x < width; x += spacing) for (let y = startY; y < height; y += spacing) {
         context.beginPath();
-        context.arc(x, y, viewport.scale > 1.7 ? 1.05 : 0.8, 0, Math.PI * 2);
+        context.arc(x, y, view.scale > 1.7 ? 1.05 : 0.8, 0, Math.PI * 2);
+        context.fill();
+      }
+    } else if (paper === "ruled") {
+      context.strokeStyle = "rgba(95, 150, 190, 0.24)";
+      context.lineWidth = 1;
+      for (let y = startY; y < height; y += spacing) {
+        context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke();
+      }
+    } else if (paper === "grid") {
+      context.strokeStyle = "rgba(75, 142, 181, 0.18)";
+      context.lineWidth = 1;
+      for (let x = startX; x < width; x += spacing) {
+        context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke();
+      }
+      for (let y = startY; y < height; y += spacing) {
+        context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke();
+      }
+    } else if (paper === "story") {
+      for (let x = startX; x < width; x += spacing) for (let y = startY; y < height; y += spacing) {
+        const alternate = Math.round((x - startX) / spacing + (y - startY) / spacing) % 2;
+        context.fillStyle = alternate ? "rgba(232, 93, 63, 0.16)" : "rgba(242, 184, 75, 0.22)";
+        context.beginPath();
+        context.arc(x, y, Math.max(1.5, 2.4 * view.scale), 0, Math.PI * 2);
         context.fill();
       }
     }
@@ -239,6 +292,11 @@
       context.fillStyle = "rgba(120, 98, 23, 0.16)";
       context.fillRect(element.x, element.y, element.w, 5);
       drawMultilineText(context, { ...element, x: element.x + 18, y: element.y + 18 });
+    } else if (element.type === "stamp") {
+      context.font = `${element.size}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(element.emoji, element.x, element.y);
     } else if (element.type === "image") {
       const image = getImage(element.src);
       if (image.complete && image.naturalWidth) {
@@ -268,6 +326,9 @@
       const lines = String(element.text || "").split("\n");
       const width = Math.max(24, ...lines.map((line) => line.length * element.fontSize * 0.61));
       return { x: element.x, y: element.y, w: width, h: Math.max(element.fontSize, lines.length * element.fontSize * 1.35) };
+    }
+    if (element.type === "stamp") {
+      return { x: element.x - element.size / 2, y: element.y - element.size / 2, w: element.size, h: element.size };
     }
     return { x: element.x, y: element.y, w: element.w, h: element.h };
   }
@@ -305,7 +366,7 @@
     const height = canvas.height / dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    drawGrid(ctx, width, height);
+    drawPaper(ctx, width, height);
     ctx.save();
     ctx.translate(viewport.x, viewport.y);
     ctx.scale(viewport.scale, viewport.scale);
@@ -318,6 +379,7 @@
     if (nextTool === tool) return;
     commitTextEditor();
     tool = nextTool;
+    if (tool !== "stamp") controls.stampMenu.hidden = true;
     if (tool !== "select") setSelected(null);
     $$("[data-tool]").forEach((button) => button.classList.toggle("active", button.dataset.tool === tool));
     updateCursor();
@@ -335,7 +397,8 @@
       rectangle: "crosshair",
       ellipse: "crosshair",
       text: "text",
-      sticky: "crosshair"
+      sticky: "crosshair",
+      stamp: "copy"
     };
     canvas.style.cursor = spacePressed ? "grab" : (cursors[tool] || "default");
   }
@@ -425,6 +488,19 @@
     render();
   }
 
+  function addStamp(point) {
+    const element = {
+      id: uid(),
+      type: "stamp",
+      emoji: activeStamp,
+      x: point.x,
+      y: point.y,
+      size: 54 + style.width * 3
+    };
+    elements.push(element);
+    commitHistory();
+  }
+
   function eraseAt(point) {
     const before = elements.length;
     const selectedWasRemoved = elements.some((element) => element.id === selectedId && hitElement(element, point));
@@ -502,6 +578,10 @@
     }
     if (SHAPE_TOOLS.has(tool)) {
       addShape(point, tool);
+      return;
+    }
+    if (tool === "stamp") {
+      addStamp(point);
       return;
     }
     if (tool === "text" || tool === "sticky") openTextEditor(point, tool === "sticky");
@@ -692,6 +772,89 @@
     commitHistory();
   }
 
+  function createPage(items = [], paper = currentPaper) {
+    return {
+      id: uid(),
+      elements: Array.isArray(items) ? items : [],
+      paper: PAPER_STYLES[paper] ? paper : "dots"
+    };
+  }
+
+  function syncCurrentPage() {
+    if (!pages.length) pages = [createPage(elements, currentPaper)];
+    pages[currentPageIndex].elements = elements;
+    pages[currentPageIndex].paper = currentPaper;
+  }
+
+  function updatePageControls() {
+    controls.pageLabel.textContent = `${currentPageIndex + 1} / ${pages.length}`;
+    controls.prevPage.disabled = currentPageIndex <= 0;
+    controls.nextPage.disabled = currentPageIndex >= pages.length - 1;
+    controls.deletePage.disabled = pages.length <= 1;
+  }
+
+  function updatePaperControls() {
+    $$('[data-paper]').forEach((button) => button.classList.toggle("selected", button.dataset.paper === currentPaper));
+  }
+
+  function resetPageHistory() {
+    history = [snapshot()];
+    historyIndex = 0;
+    updateHistoryButtons();
+  }
+
+  function switchPage(index) {
+    const nextIndex = clamp(index, 0, pages.length - 1);
+    if (nextIndex === currentPageIndex) return;
+    commitTextEditor();
+    syncCurrentPage();
+    currentPageIndex = nextIndex;
+    elements = pages[currentPageIndex].elements;
+    currentPaper = pages[currentPageIndex].paper || "dots";
+    setSelected(null);
+    resetPageHistory();
+    updatePageControls();
+    updatePaperControls();
+    render();
+    scheduleSave();
+  }
+
+  function addPage() {
+    if (pages.length >= 24) {
+      showToast("一本画本最多 24 页");
+      return;
+    }
+    commitTextEditor();
+    syncCurrentPage();
+    const newIndex = currentPageIndex + 1;
+    pages.splice(newIndex, 0, createPage([], currentPaper));
+    currentPageIndex = newIndex;
+    elements = pages[currentPageIndex].elements;
+    setSelected(null);
+    resetPageHistory();
+    updatePageControls();
+    updatePaperControls();
+    render();
+    scheduleSave();
+    showToast(`已新增第 ${currentPageIndex + 1} 页`);
+  }
+
+  function deleteCurrentPage() {
+    if (pages.length <= 1) return;
+    commitTextEditor();
+    pages.splice(currentPageIndex, 1);
+    currentPageIndex = Math.min(currentPageIndex, pages.length - 1);
+    elements = pages[currentPageIndex].elements;
+    currentPaper = pages[currentPageIndex].paper || "dots";
+    setSelected(null);
+    resetPageHistory();
+    updatePageControls();
+    updatePaperControls();
+    render();
+    scheduleSave();
+    showToast("画页已删除");
+  }
+
   function snapshot() {
     return JSON.stringify(elements);
   }
@@ -706,6 +869,7 @@
     history.push(next);
     if (history.length > 80) history.shift();
     historyIndex = history.length - 1;
+    syncCurrentPage();
     updateHistoryButtons();
     scheduleSave();
     render();
@@ -715,6 +879,7 @@
     if (index < 0 || index >= history.length) return;
     historyIndex = index;
     elements = JSON.parse(history[historyIndex]);
+    syncCurrentPage();
     setSelected(null);
     updateHistoryButtons();
     scheduleSave();
@@ -734,10 +899,12 @@
   }
 
   function saveBoard() {
+    syncCurrentPage();
     const payload = {
-      version: 1,
+      version: 2,
       title: controls.boardTitle.value.trim() || "未命名白板",
-      elements,
+      pages,
+      currentPageIndex,
       viewport,
       gridVisible
     };
@@ -755,15 +922,33 @@
   function loadBoard() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!saved || !Array.isArray(saved.elements)) return;
-      elements = saved.elements;
-      controls.boardTitle.value = saved.title || "未命名白板";
-      if (saved.viewport) Object.assign(viewport, saved.viewport);
-      gridVisible = saved.gridVisible !== false;
+      if (!saved) {
+        pages = [createPage()];
+      } else if (Array.isArray(saved.pages) && saved.pages.length) {
+        pages = saved.pages.map((page) => ({
+          id: page.id || uid(),
+          elements: Array.isArray(page.elements) ? page.elements : [],
+          paper: PAPER_STYLES[page.paper] ? page.paper : "dots"
+        }));
+        currentPageIndex = clamp(Number(saved.currentPageIndex) || 0, 0, pages.length - 1);
+      } else if (Array.isArray(saved.elements)) {
+        pages = [createPage(saved.elements, "dots")];
+      } else {
+        pages = [createPage()];
+      }
+      elements = pages[currentPageIndex].elements;
+      currentPaper = pages[currentPageIndex].paper || "dots";
+      controls.boardTitle.value = saved?.title || "未命名白板";
+      if (saved?.viewport) Object.assign(viewport, saved.viewport);
+      gridVisible = saved?.gridVisible !== false;
       controls.gridButton.setAttribute("aria-pressed", String(gridVisible));
       updateZoomLabel();
     } catch (error) {
       localStorage.removeItem(STORAGE_KEY);
+      pages = [createPage()];
+      currentPageIndex = 0;
+      elements = pages[0].elements;
+      currentPaper = "dots";
     }
   }
 
@@ -799,8 +984,7 @@
     output.height = Math.round(naturalHeight * exportScale);
     const outputCtx = output.getContext("2d");
     outputCtx.scale(exportScale, exportScale);
-    outputCtx.fillStyle = "#ffffff";
-    outputCtx.fillRect(0, 0, naturalWidth, naturalHeight);
+    drawPaper(outputCtx, naturalWidth, naturalHeight, currentPaper, { x: margin - bounds.x, y: margin - bounds.y, scale: 1 });
     const images = elements.filter((element) => element.type === "image").map((element) => new Promise((resolve) => {
       const image = getImage(element.src);
       if (image.complete) resolve(); else image.addEventListener("load", resolve, { once: true });
@@ -817,6 +1001,22 @@
 
   function esc(value) {
     return String(value).replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
+  }
+
+  function paperToSVG(width, height) {
+    const color = (PAPER_STYLES[currentPaper] || PAPER_STYLES.dots).color;
+    const base = `<rect width="${width}" height="${height}" fill="${color}"/>`;
+    if (!gridVisible || currentPaper === "blank") return base;
+    if (currentPaper === "dots") {
+      return `<defs><pattern id="paper" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.8" fill="#9fa49e" opacity=".35"/></pattern></defs>${base}<rect width="${width}" height="${height}" fill="url(#paper)"/>`;
+    }
+    if (currentPaper === "ruled") {
+      return `<defs><pattern id="paper" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M0 31.5h32" stroke="#78a9ca" stroke-opacity=".28"/></pattern></defs>${base}<rect width="${width}" height="${height}" fill="url(#paper)"/>`;
+    }
+    if (currentPaper === "grid") {
+      return `<defs><pattern id="paper" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0v24" fill="none" stroke="#6eabc8" stroke-opacity=".22"/></pattern></defs>${base}<rect width="${width}" height="${height}" fill="url(#paper)"/>`;
+    }
+    return `<defs><pattern id="paper" width="54" height="54" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2.4" fill="#f2b84b" opacity=".28"/><circle cx="31" cy="31" r="1.8" fill="#e85d3f" opacity=".2"/></pattern></defs>${base}<rect width="${width}" height="${height}" fill="url(#paper)"/>`;
   }
 
   function elementToSVG(element, offsetX, offsetY) {
@@ -855,6 +1055,9 @@
       const lines = String(element.text).split("\n").map((line, index) => `<tspan x="${moveX(x)}" y="${moveY(y + fontSize + index * fontSize * 1.35)}">${esc(line)}</tspan>`).join("");
       return `${background}<text fill="${esc(element.color)}" font-family="Inter, sans-serif" font-size="${fontSize}" font-weight="${element.fontWeight || 500}">${lines}</text>`;
     }
+    if (element.type === "stamp") {
+      return `<text x="${moveX(element.x)}" y="${moveY(element.y)}" font-family="Apple Color Emoji, Segoe UI Emoji, sans-serif" font-size="${element.size}" text-anchor="middle" dominant-baseline="central">${esc(element.emoji)}</text>`;
+    }
     if (element.type === "image") {
       return `<image href="${esc(element.src)}" x="${moveX(element.x)}" y="${moveY(element.y)}" width="${element.w}" height="${element.h}" preserveAspectRatio="none"/>`;
     }
@@ -869,13 +1072,14 @@
     const offsetX = margin - bounds.x + Math.max(0, (640 - (bounds.w + margin * 2)) / 2);
     const offsetY = margin - bounds.y + Math.max(0, (420 - (bounds.h + margin * 2)) / 2);
     const body = elements.map((element) => elementToSVG(element, offsetX, offsetY)).join("");
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#fff"/>${body}</svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${paperToSVG(width, height)}${body}</svg>`;
     downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), safeFilename("svg"));
     showToast("SVG 已导出");
   }
 
   function exportJSON() {
-    const payload = JSON.stringify({ version: 1, title: controls.boardTitle.value.trim() || "未命名白板", elements }, null, 2);
+    syncCurrentPage();
+    const payload = JSON.stringify({ version: 2, title: controls.boardTitle.value.trim() || "未命名白板", pages, currentPageIndex }, null, 2);
     downloadBlob(new Blob([payload], { type: "application/json" }), safeFilename("json"));
     showToast("白板文件已导出");
   }
@@ -885,11 +1089,20 @@
     reader.onload = () => {
       try {
         const payload = JSON.parse(reader.result);
-        if (!payload || !Array.isArray(payload.elements)) throw new Error("invalid");
-        elements = payload.elements;
+        if (!payload || (!Array.isArray(payload.elements) && !Array.isArray(payload.pages))) throw new Error("invalid");
+        pages = Array.isArray(payload.pages) && payload.pages.length ? payload.pages.map((page) => ({
+          id: page.id || uid(),
+          elements: Array.isArray(page.elements) ? page.elements : [],
+          paper: PAPER_STYLES[page.paper] ? page.paper : "dots"
+        })) : [createPage(payload.elements, "dots")];
+        currentPageIndex = clamp(Number(payload.currentPageIndex) || 0, 0, pages.length - 1);
+        elements = pages[currentPageIndex].elements;
+        currentPaper = pages[currentPageIndex].paper || "dots";
         controls.boardTitle.value = payload.title || file.name.replace(/\.json$/i, "");
         setSelected(null);
-        commitHistory();
+        resetPageHistory();
+        updatePageControls();
+        updatePaperControls();
         fitContent();
         showToast("白板已导入");
       } catch (error) {
@@ -964,6 +1177,18 @@
     });
 
     $$("[data-tool]").forEach((button) => button.addEventListener("click", () => setTool(button.dataset.tool)));
+    $("#stampButton").addEventListener("click", (event) => {
+      event.stopPropagation();
+      controls.paperMenu.hidden = true;
+      controls.stampMenu.hidden = !controls.stampMenu.hidden;
+    });
+    $$("[data-stamp]").forEach((button) => button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      activeStamp = button.dataset.stamp;
+      $$("[data-stamp]").forEach((item) => item.classList.toggle("selected", item === button));
+      controls.stampMenu.hidden = true;
+      setTool("stamp");
+    }));
     $("#imageButton").addEventListener("click", () => controls.imageInput.click());
     controls.imageInput.addEventListener("change", () => {
       insertImageFile(controls.imageInput.files[0]);
@@ -992,6 +1217,10 @@
     controls.undo.addEventListener("click", () => restoreHistory(historyIndex - 1));
     controls.redo.addEventListener("click", () => restoreHistory(historyIndex + 1));
     controls.deleteButton.addEventListener("click", deleteSelected);
+    controls.duplicateButton.addEventListener("click", () => {
+      copySelected();
+      pasteSelected();
+    });
     controls.gridButton.addEventListener("click", () => {
       gridVisible = !gridVisible;
       controls.gridButton.setAttribute("aria-pressed", String(gridVisible));
@@ -1002,6 +1231,26 @@
     $("#zoomInButton").addEventListener("click", () => zoomBy(1.25));
     controls.zoomLabel.addEventListener("click", () => zoomAt({ x: workspace.clientWidth / 2, y: workspace.clientHeight / 2 }, 1));
     $("#fitButton").addEventListener("click", fitContent);
+
+    controls.paperButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      controls.stampMenu.hidden = true;
+      controls.paperMenu.hidden = !controls.paperMenu.hidden;
+    });
+    $$("[data-paper]").forEach((button) => button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      currentPaper = button.dataset.paper;
+      syncCurrentPage();
+      updatePaperControls();
+      controls.paperMenu.hidden = true;
+      render();
+      scheduleSave();
+      showToast(`已换成${$("b", button).textContent}`);
+    }));
+    controls.prevPage.addEventListener("click", () => switchPage(currentPageIndex - 1));
+    controls.nextPage.addEventListener("click", () => switchPage(currentPageIndex + 1));
+    controls.addPage.addEventListener("click", addPage);
+    controls.deletePage.addEventListener("click", () => controls.deletePageDialog.showModal());
 
     controls.exportButton.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -1020,6 +1269,8 @@
         controls.exportMenu.hidden = true;
         controls.exportButton.setAttribute("aria-expanded", "false");
       }
+      if (!event.target.closest("#stampMenu") && !event.target.closest("#stampButton")) controls.stampMenu.hidden = true;
+      if (!event.target.closest("#paperMenu") && !event.target.closest("#paperButton")) controls.paperMenu.hidden = true;
     });
 
     controls.importButton.addEventListener("click", () => controls.jsonInput.click());
@@ -1036,10 +1287,20 @@
       elements = [];
       setSelected(null);
       commitHistory();
-      showToast("白板已清空");
+      showToast("当前画页已清空");
     });
     controls.clearDialog.addEventListener("click", (event) => {
       if (event.target === controls.clearDialog) controls.clearDialog.close();
+    });
+
+    $(".dialog-close", controls.deletePageDialog).addEventListener("click", () => controls.deletePageDialog.close());
+    $("[data-page-dialog='cancel']", controls.deletePageDialog).addEventListener("click", () => controls.deletePageDialog.close());
+    $("[data-page-dialog='confirm']", controls.deletePageDialog).addEventListener("click", () => {
+      controls.deletePageDialog.close();
+      deleteCurrentPage();
+    });
+    controls.deletePageDialog.addEventListener("click", (event) => {
+      if (event.target === controls.deletePageDialog) controls.deletePageDialog.close();
     });
 
     controls.boardTitle.addEventListener("input", scheduleSave);
@@ -1077,10 +1338,14 @@
       if (modifier && event.key.toLowerCase() === "x") copySelected(true);
       if (modifier && event.key.toLowerCase() === "v") pasteSelected();
       if (!modifier && !event.altKey) {
-        const keyTools = { v: "select", h: "hand", p: "pen", e: "eraser", l: "line", a: "arrow", r: "rectangle", o: "ellipse", t: "text", n: "sticky" };
+        const keyTools = { v: "select", h: "hand", p: "pen", e: "eraser", l: "line", a: "arrow", r: "rectangle", o: "ellipse", t: "text", n: "sticky", s: "stamp" };
         if (keyTools[event.key.toLowerCase()]) setTool(keyTools[event.key.toLowerCase()]);
       }
-      if (event.key === "Escape") setSelected(null);
+      if (event.key === "Escape") {
+        setSelected(null);
+        controls.stampMenu.hidden = true;
+        controls.paperMenu.hidden = true;
+      }
     });
     document.addEventListener("keyup", (event) => {
       if (event.code === "Space") { spacePressed = false; updateCursor(); }
@@ -1108,6 +1373,9 @@
     history = [snapshot()];
     historyIndex = 0;
     updateHistoryButtons();
+    updatePageControls();
+    updatePaperControls();
+    $$("[data-stamp]").forEach((button) => button.classList.toggle("selected", button.dataset.stamp === activeStamp));
     syncStyleControls();
     bindEvents();
     resizeCanvas();
