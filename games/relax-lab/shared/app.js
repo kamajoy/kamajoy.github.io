@@ -141,7 +141,15 @@
   }
 
   function startAmbient() {
-    const notes = AMBIENT[GAME_ID];
+    const game = CATALOG.find((item) => item.id === GAME_ID);
+    const modeNotes = {
+      collect: [261.63, 329.63, 392, 523.25], route: [293.66, 369.99, 440, 369.99],
+      builder: [329.63, 415.3, 493.88, 659.25], trail: [220, 329.63, 440, 554.37],
+      memory: [261.63, 392, 523.25, 659.25], toggle: [246.94, 329.63, 415.3, 493.88],
+      recipe: [349.23, 440, 523.25, 587.33], tap: [392, 493.88, 659.25, 783.99],
+      balance: [293.66, 392, 493.88, 392]
+    };
+    const notes = AMBIENT[GAME_ID] || (game && modeNotes[game.mode]);
     if (!progress.sound || !notes || !audioContext || audioContext.state !== "running") return;
     stopAmbient();
     ambientStep = 0;
@@ -201,7 +209,7 @@
   }
 
   function renderHub() {
-    document.title = "轻松游乐场 · 10款儿童放松小游戏";
+    document.title = "轻松游乐场 · 40款儿童趣味小游戏";
     document.body.dataset.page = "hub";
     appRoot.innerHTML = `
       <header class="site-header">
@@ -210,7 +218,7 @@
       </header>
       <main class="hub-main">
         <section class="hub-intro">
-          <div class="intro-copy"><p class="eyebrow">7-10岁 · 10款无压力小游戏</p><h1>轻松游乐场</h1><p>画一会儿、听一会儿、看一会儿。这里没有倒计时和失败惩罚，选一个喜欢的画面，玩几分钟就好。</p></div>
+          <div class="intro-copy"><p class="eyebrow">8-10岁 · 40款无压力小游戏</p><h1>轻松游乐场</h1><p>从自由创作到路线规划、节奏记忆和小小策略挑战。没有失败惩罚，选一个喜欢的世界，玩几分钟就好。</p></div>
           <div class="intro-scene" aria-hidden="true"><i class="scene-sun"></i><i class="scene-cloud one"></i><i class="scene-cloud two"></i><b class="scene-plane">➤</b><i class="scene-hill"></i><i class="scene-dots"></i></div>
         </section>
         <section class="catalog-section" aria-labelledby="relaxTitle">
@@ -258,7 +266,9 @@
       "rhythm-drums": renderRhythm,
       "paper-plane": renderPaperPlane
     };
-    cleanupGame = engines[game.id](mount, game) || null;
+    const engine = engines[game.id] || (game.engine === "mini-arcade" ? renderMiniArcade : null);
+    if (!engine) throw new Error(`Missing game engine: ${game.id}`);
+    cleanupGame = engine(mount, game) || null;
   }
 
   function canvasPanel(mount, game, score, toolbar) {
@@ -695,6 +705,205 @@
       rings.forEach(ring=>{ring.x-=reducedMotion?.35:1.05;if(!ring.hit&&ring.x<155&&ring.x>85&&Math.abs(ring.y-planeY)<ring.r){ring.hit=true;stamps+=1;playSound("catch");setScore(`印章 ${Math.min(stamps,8)} / 8`);setBest(game,stamps);if(stamps===8){playSound("success");canvasMessage("纸飞机完成了一次彩云旅行！");}}if(ring.x<-70){const far=Math.max(...rings.map(item=>item.x));ring.x=Math.max(width+100,far+width*.3);ring.y=rand(70,height-70);ring.r=rand(28,42);ring.hit=false;}ctx.strokeStyle=ring.hit?"rgba(255,255,255,.25)":"#f1ca51";ctx.lineWidth=8;ctx.beginPath();ctx.arc(ring.x,ring.y,ring.r,0,TAU);ctx.stroke();ctx.strokeStyle="rgba(24,33,39,.45)";ctx.lineWidth=2;ctx.stroke();});
       ctx.save();ctx.translate(120,planeY);ctx.rotate((targetY-planeY)*.0015);ctx.fillStyle="#fffef9";ctx.strokeStyle="#182127";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-45,-21);ctx.lineTo(48,0);ctx.lineTo(-45,22);ctx.lineTo(-18,2);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-18,2);ctx.lineTo(48,0);ctx.lineTo(-8,13);ctx.stroke();ctx.restore();}
     const guide=event=>{event.preventDefault();targetY=clamp(surface.point(event).y,38,height-38);markPlayed(game);};canvas.addEventListener("pointerdown",guide);canvas.addEventListener("pointermove",guide);mount.querySelector("#resetPlane").addEventListener("click",()=>{stamps=0;setScore("印章 0 / 8");rings.forEach((ring,index)=>{ring.x=width+120+index*width*.34;ring.hit=false;});});const stopLoop=loopFrame(draw);return()=>{stopLoop();surface.cleanup();};
+  }
+
+  function miniPanel(mount, game, score, body, actions) {
+    mount.innerHTML = `<div class="game-panel mini-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">${escapeHtml(score)}</span></div><div class="mini-stage">${body}</div>${actions ? `<div class="toolbar mini-toolbar">${actions}</div>` : ""}</div>`;
+  }
+
+  function paintMiniBackground(ctx, width, height, scene, time) {
+    const dark = ["space", "planet", "neon", "cave", "theater"].includes(scene);
+    const ocean = scene === "ocean";
+    const forest = ["forest", "garden"].includes(scene);
+    const kitchen = scene === "kitchen";
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, dark ? "#17233f" : ocean ? "#8bd3de" : forest ? "#bfe0bd" : kitchen ? "#fff0ce" : "#dcecf1");
+    gradient.addColorStop(1, dark ? "#2c2242" : ocean ? "#176f7c" : forest ? "#4f8257" : kitchen ? "#e4a778" : "#9cc4cf");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+    if (dark) {
+      ctx.fillStyle = "rgba(255,255,255,.55)";
+      for (let index = 0; index < 38; index += 1) {
+        const x = (index * 83 + 31) % width;
+        const y = (index * 47 + 19) % Math.max(1, height - 60);
+        const pulse = 1 + Math.sin((time || 0) * .001 + index) * .7;
+        ctx.beginPath(); ctx.arc(x, y, pulse, 0, TAU); ctx.fill();
+      }
+    } else if (ocean) {
+      ctx.strokeStyle = "rgba(255,255,255,.24)"; ctx.lineWidth = 3;
+      for (let y = 35; y < height; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.quadraticCurveTo(width * .25, y - 12, width * .5, y); ctx.quadraticCurveTo(width * .75, y + 12, width, y); ctx.stroke(); }
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,.22)";
+      for (let index = 0; index < 10; index += 1) { ctx.beginPath(); ctx.arc((index * 97 + 40) % width, height - 28 - (index % 3) * 9, 22 + (index % 4) * 7, Math.PI, TAU); ctx.fill(); }
+    }
+  }
+
+  function renderMiniArcade(mount, game) {
+    const engines = {
+      collect: renderMiniCollect, route: renderMiniRoute, builder: renderMiniBuilder,
+      trail: renderMiniTrail, memory: renderMiniMemory, toggle: renderMiniToggle,
+      recipe: renderMiniRecipe, tap: renderMiniTap, balance: renderMiniBalance
+    };
+    return (engines[game.mode] || renderMiniTap)(mount, game);
+  }
+
+  function renderMiniCollect(mount, game) {
+    const config = game.config || {}; const goal = config.goal || 12;
+    const canvas = canvasPanel(mount, game, `收集 0 / ${goal}`, `<span class="game-hint">按住并拖动主角</span><button class="action-button secondary" id="miniReset">重新开始</button>`);
+    let width = 1; let height = 1; let score = 0; let player = { x: 100, y: 200 }; let targets = []; let obstacles = [];
+    const surface = configureCanvas(canvas, (w, h) => {
+      width = w; height = h; player = { x: w * .22, y: h * .5 };
+      if (!targets.length) targets = Array.from({ length: 8 }, () => makeItem(false));
+      if (!obstacles.length) obstacles = Array.from({ length: 5 }, () => makeItem(true));
+    });
+    function makeItem(obstacle) { return { x: rand(45, Math.max(46, width - 45)), y: rand(55, Math.max(56, height - 55)), vx: rand(-.28, .28), vy: rand(-.2, .2), r: obstacle ? 23 : 18, obstacle }; }
+    function relocate(item) { Object.assign(item, makeItem(item.obstacle)); }
+    function draw(time) {
+      const ctx = surface.context; paintMiniBackground(ctx, width, height, config.scene, time);
+      targets.forEach((item, index) => {
+        item.x += item.vx; item.y += item.vy;
+        if (item.x < 25 || item.x > width - 25) item.vx *= -1;
+        if (item.y < 35 || item.y > height - 35) item.vy *= -1;
+        const glow = ctx.createRadialGradient(item.x, item.y, 2, item.x, item.y, 28);
+        glow.addColorStop(0, "rgba(255,226,111,.75)"); glow.addColorStop(1, "rgba(255,226,111,0)");
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(item.x, item.y, 28, 0, TAU); ctx.fill();
+        ctx.fillStyle = index % 2 ? "#fff2a8" : "#ffffff"; ctx.font = "28px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(config.target || "✦", item.x, item.y);
+        if (distance(player, item) < 38) {
+          score += 1; relocate(item); playSound("catch"); setScore(`收集 ${Math.min(score, goal)} / ${goal}`); setBest(game, score);
+          if (score === goal) { playSound("success"); canvasMessage("全部收集完成，还可以继续探索！"); }
+        }
+      });
+      obstacles.forEach((item) => {
+        item.x += item.vx; item.y += item.vy;
+        if (item.x < 30 || item.x > width - 30) item.vx *= -1;
+        if (item.y < 35 || item.y > height - 35) item.vy *= -1;
+        ctx.globalAlpha = .7; ctx.font = "31px sans-serif"; ctx.fillText(config.obstacle || "●", item.x, item.y); ctx.globalAlpha = 1;
+        if (distance(player, item) < 42) { player.x = clamp(player.x + (player.x - item.x) * .45, 30, width - 30); player.y = clamp(player.y + (player.y - item.y) * .45, 35, height - 35); }
+      });
+      ctx.save(); ctx.translate(player.x, player.y); ctx.font = "42px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(config.player || "🚀", 0, 0); ctx.restore();
+    }
+    const move = (event) => { event.preventDefault(); markPlayed(game); player = surface.point(event); player.x = clamp(player.x, 30, width - 30); player.y = clamp(player.y, 35, height - 35); };
+    canvas.addEventListener("pointerdown", move); canvas.addEventListener("pointermove", (event) => { if (event.buttons || event.pressure) move(event); });
+    mount.querySelector("#miniReset").addEventListener("click", () => { score = 0; targets = Array.from({ length: 8 }, () => makeItem(false)); setScore(`收集 0 / ${goal}`); });
+    const stop = loopFrame(draw); return () => { stop(); surface.cleanup(); };
+  }
+
+  function makeGridRoute(size, length) {
+    for (let restart = 0; restart < 80; restart += 1) {
+      const path = [randInt(0, size * size - 1)];
+      while (path.length < length) {
+        const current = path[path.length - 1]; const x = current % size; const y = Math.floor(current / size);
+        const neighbors = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]].filter(([nx, ny]) => nx >= 0 && nx < size && ny >= 0 && ny < size).map(([nx, ny]) => ny * size + nx).filter((cell) => !path.includes(cell));
+        if (!neighbors.length) break;
+        path.push(pick(neighbors));
+      }
+      if (path.length === length) return path;
+    }
+    return Array.from({ length }, (_, index) => index);
+  }
+
+  function renderMiniRoute(mount, game) {
+    const config = game.config || {}; let stage = 1; let route = []; let step = 0;
+    function newStage() { route = makeGridRoute(5, 5 + stage * 2); step = 0; draw(); }
+    function draw() {
+      miniPanel(mount, game, `路线 ${stage} / 3`, `<div class="route-scene scene-${escapeHtml(config.scene || "map")}"><div class="mini-route-grid">${Array.from({ length: 25 }, (_, cell) => {
+        const routeIndex = route.indexOf(cell); const reached = routeIndex >= 0 && routeIndex < step; const current = routeIndex === Math.max(0, step - 1); const next = routeIndex === step; const finish = routeIndex === route.length - 1;
+        return `<button type="button" data-cell="${cell}" class="${routeIndex >= 0 ? "track" : ""} ${reached ? "reached" : ""} ${current ? "current" : ""} ${next ? "next" : ""}" aria-label="${routeIndex >= 0 ? `路线第${routeIndex + 1}格` : "空地"}">${current ? escapeHtml(config.player || "●") : finish ? escapeHtml(config.target || "★") : routeIndex >= 0 ? "·" : ((cell * 7) % 11 === 0 ? "◆" : "")}</button>`;
+      }).join("")}</div><p class="mini-status" id="miniStatus">${step ? `已走 ${step} 格，继续找相邻道路` : "轻点发光起点开始"}</p></div>`, `<button class="action-button secondary" id="newRoute">换一条路线</button>`);
+      mount.querySelectorAll("[data-cell]").forEach((button) => button.addEventListener("click", () => {
+        markPlayed(game); const cell = Number(button.dataset.cell);
+        if (cell !== route[step]) { playSound("soft"); button.classList.add("route-wrong"); window.setTimeout(() => button.classList.remove("route-wrong"), 280); return; }
+        step += 1; playSound("catch");
+        if (step >= route.length) {
+          setBest(game, stage); playSound("success");
+          if (stage >= 3) { canvasMessage("三张路线全部接通！"); draw(); }
+          else { stage += 1; window.setTimeout(newStage, 450); }
+        } else draw();
+      }));
+      mount.querySelector("#newRoute").addEventListener("click", newStage);
+    }
+    newStage(); return null;
+  }
+
+  function renderMiniBuilder(mount, game) {
+    const config = game.config || {}; const pieces = config.pieces || ["✦", "●", "▲", "■", "◆", "○"];
+    let selected = pieces[0]; const placements = []; const used = new Set();
+    const toolbar = `<div class="piece-palette">${pieces.map((piece, index) => `<button class="piece-button ${index === 0 ? "active" : ""}" data-piece="${escapeHtml(piece)}" aria-label="选择 ${escapeHtml(piece)}">${escapeHtml(piece)}</button>`).join("")}</div><div class="tool-group"><button class="tool-icon" id="clearBuild" aria-label="清空" title="清空">×</button><button class="tool-icon" id="saveBuild" aria-label="保存图片" title="保存图片">↓</button></div>`;
+    const canvas = canvasPanel(mount, game, `部件 0 / ${pieces.length}`, toolbar); let surface;
+    surface = configureCanvas(canvas, () => { if (surface) draw(); });
+    function draw(time) {
+      const { width, height } = surface.size(); const ctx = surface.context; paintMiniBackground(ctx, width, height, config.scene, time);
+      if (["planet", "kitchen"].includes(config.scene)) { ctx.fillStyle = config.scene === "planet" ? "rgba(87,116,181,.8)" : "#e7ba75"; ctx.beginPath(); ctx.arc(width * .5, height * .55, Math.min(width, height) * .3, 0, TAU); ctx.fill(); }
+      placements.forEach((item) => { ctx.save(); ctx.translate(item.x, item.y); ctx.rotate(item.rotation); ctx.font = `${item.size}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(item.piece, 0, 0); ctx.restore(); });
+    }
+    canvas.addEventListener("pointerdown", (event) => {
+      event.preventDefault(); markPlayed(game); const point = surface.point(event);
+      placements.push({ x: point.x, y: point.y, piece: selected, size: randInt(36, 62), rotation: rand(-.2, .2) }); used.add(selected); playSound("glow"); setScore(`部件 ${used.size} / ${pieces.length}`); setBest(game, used.size); draw();
+      if (used.size === pieces.length) { playSound("success"); canvasMessage("六种部件都到齐，作品完成！"); }
+    });
+    mount.querySelectorAll("[data-piece]").forEach((button) => button.addEventListener("click", () => { selected = button.dataset.piece; mount.querySelectorAll("[data-piece]").forEach((item) => item.classList.toggle("active", item === button)); }));
+    mount.querySelector("#clearBuild").addEventListener("click", () => { placements.length = 0; used.clear(); setScore(`部件 0 / ${pieces.length}`); draw(); });
+    mount.querySelector("#saveBuild").addEventListener("click", () => downloadCanvas(canvas, game.title)); draw(); return surface.cleanup;
+  }
+
+  function renderMiniTrail(mount, game) {
+    const config = game.config || {}; const colors = config.colors || ["#f1ca51", "#68c5d2", "#ef7aa1"];
+    const canvas = canvasPanel(mount, game, "星环 0 / 5", `<span class="game-hint">按住画面自由绘光</span><button class="action-button secondary" id="clearTrail">清空光迹</button>`);
+    let surface; let width = 1; let height = 1; let current = null; let targetIndex = 0; const strokes = []; let targets = [];
+    surface = configureCanvas(canvas, (w, h) => { width = w; height = h; targets = [[.18,.28],[.42,.63],[.62,.3],[.78,.68],[.9,.38]].map(([x,y]) => ({ x:x*w, y:y*h })); if (surface) draw(); });
+    function draw(time) {
+      const ctx = surface.context; paintMiniBackground(ctx, width, height, config.scene, time);
+      targets.forEach((target, index) => { ctx.strokeStyle = index < targetIndex ? "rgba(255,255,255,.25)" : index === targetIndex ? "#f1ca51" : "rgba(255,255,255,.45)"; ctx.lineWidth = index === targetIndex ? 7 : 3; ctx.beginPath(); ctx.arc(target.x,target.y,index===targetIndex?25:18,0,TAU);ctx.stroke(); ctx.fillStyle="#fff";ctx.font="18px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(config.target||"✧",target.x,target.y); });
+      strokes.forEach((stroke, strokeIndex) => { ctx.strokeStyle = colors[strokeIndex % colors.length]; ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 14; ctx.beginPath(); stroke.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y)); ctx.stroke(); ctx.shadowBlur=0; });
+    }
+    function add(event) { if (!current) return; const point=surface.point(event); current.push(point); if(targetIndex<targets.length&&distance(point,targets[targetIndex])<34){targetIndex+=1;playSound("glow");setScore(`星环 ${targetIndex} / 5`);setBest(game,targetIndex);if(targetIndex===5){playSound("success");canvasMessage("光迹穿过了全部星环！");}} draw(); }
+    canvas.addEventListener("pointerdown",event=>{event.preventDefault();canvas.setPointerCapture(event.pointerId);markPlayed(game);current=[];strokes.push(current);add(event);});
+    canvas.addEventListener("pointermove",event=>{if(current){event.preventDefault();add(event);}}); const stop=()=>{current=null;};canvas.addEventListener("pointerup",stop);canvas.addEventListener("pointercancel",stop);
+    mount.querySelector("#clearTrail").addEventListener("click",()=>{strokes.length=0;targetIndex=0;setScore("星环 0 / 5");draw();});draw();return surface.cleanup;
+  }
+
+  function renderMiniMemory(mount, game) {
+    const config=game.config||{};const labels=config.pads||["1","2","3","4"];let level=1;let sequence=[];let input=0;let playing=false;let timers=[];
+    function clearTimers(){timers.forEach((timer)=>window.clearTimeout(timer));timers=[];}
+    miniPanel(mount,game,"第 1 轮",`<div class="mini-memory"><p id="memoryStatus">点播放，先观察和听</p><div class="mini-pad-grid">${labels.map((label,index)=>`<button type="button" class="mini-pad pad-${index}" data-pad="${index}">${escapeHtml(label)}</button>`).join("")}</div><div class="memory-lights" id="memoryLights"></div></div>`,`<button class="action-button" id="playMemory">▶ 播放</button><button class="action-button secondary" id="newMemory">换一个</button>`);
+    const pads=Array.from(mount.querySelectorAll("[data-pad]"));const status=mount.querySelector("#memoryStatus");const lights=mount.querySelector("#memoryLights");const frequencies=[261.63,329.63,392,523.25];
+    function makeSequence(){sequence=Array.from({length:Math.min(2+level,8)},()=>randInt(0,3));input=0;lights.innerHTML=sequence.map(()=>"<i></i>").join("");status.textContent="点播放，先观察和听";}
+    function flash(index){pads[index].classList.add("active");tone(frequencies[index],0,.2,"sine",.026);timers.push(window.setTimeout(()=>pads[index].classList.remove("active"),220));}
+    function play(){markPlayed(game);ensureAudio();clearTimers();playing=true;input=0;status.textContent="记住顺序……";lights.querySelectorAll("i").forEach((item)=>item.classList.remove("done"));sequence.forEach((value,index)=>timers.push(window.setTimeout(()=>{flash(value);lights.children[index]?.classList.add("done");},300+index*480)));timers.push(window.setTimeout(()=>{playing=false;status.textContent="轮到你啦";lights.querySelectorAll("i").forEach((item)=>item.classList.remove("done"));},400+sequence.length*480));}
+    function hit(index){if(playing)return;markPlayed(game);flash(index);if(index===sequence[input]){lights.children[input]?.classList.add("done");input+=1;if(input===sequence.length){playSound("success");status.textContent="密码完全正确！";setBest(game,level);level=Math.min(6,level+1);setScore(`第 ${level} 轮`);timers.push(window.setTimeout(()=>{makeSequence();play();},800));}}else{playSound("soft");status.textContent="没关系，再看一次";input=0;timers.push(window.setTimeout(play,600));}}
+    pads.forEach((button)=>button.addEventListener("click",()=>hit(Number(button.dataset.pad))));mount.querySelector("#playMemory").addEventListener("click",play);mount.querySelector("#newMemory").addEventListener("click",()=>{clearTimers();makeSequence();});makeSequence();return clearTimers;
+  }
+
+  function renderMiniToggle(mount, game) {
+    const config=game.config||{};let stage=1;let size=3;let cells=[];
+    function flip(index){const x=index%size;const y=Math.floor(index/size);[[x,y],[x+1,y],[x-1,y],[x,y+1],[x,y-1]].forEach(([nx,ny])=>{if(nx>=0&&nx<size&&ny>=0&&ny<size){const i=ny*size+nx;cells[i]=!cells[i];}});}
+    function newPuzzle(){size=stage+2;cells=Array(size*size).fill(true);for(let i=0;i<stage+3;i+=1)flip(randInt(0,cells.length-1));if(cells.every(Boolean))flip(0);draw();}
+    function draw(){miniPanel(mount,game,`灯阵 ${stage} / 3`,`<div class="toggle-wrap scene-${escapeHtml(config.scene||"lab")}"><div class="toggle-grid" style="--toggle-size:${size}">${cells.map((on,index)=>`<button type="button" data-toggle="${index}" class="${on?"on":""}" aria-label="${on?"已点亮":"未点亮"}">${on?escapeHtml(config.on||"◆"):escapeHtml(config.off||"◇")}</button>`).join("")}</div><p class="mini-status">目标：点亮全部方格</p></div>`,`<button class="action-button secondary" id="resetToggle">重置灯阵</button>`);mount.querySelectorAll("[data-toggle]").forEach((button)=>button.addEventListener("click",()=>{markPlayed(game);flip(Number(button.dataset.toggle));playSound("glow");if(cells.every(Boolean)){playSound("success");setBest(game,stage);if(stage<3){stage+=1;window.setTimeout(newPuzzle,450);}else{showToast("三块灯阵全部点亮！");draw();}}else draw();}));mount.querySelector("#resetToggle").addEventListener("click",newPuzzle);}
+    newPuzzle();return null;
+  }
+
+  function renderMiniRecipe(mount, game) {
+    const config=game.config||{};const ingredients=config.ingredients||["A","B","C","D"];const recipes=config.recipes||[[0,1,2],[2,3,1],[1,0,3]];let order=0;let recipe=[];let input=[];let hiding=false;let timer=0;
+    function newRecipe(){recipe=pick(recipes).slice();input=[];hiding=false;draw();}
+    function draw(){miniPanel(mount,game,`订单 ${Math.min(order+1,5)} / 5`,`<div class="recipe-stage"><p>${hiding?"按记住的顺序选择":"记住这张三步配方"}</p><div class="recipe-card ${hiding?"hidden":""}">${recipe.map((value,index)=>`<span class="${index<input.length?"done":""}">${hiding?"?":escapeHtml(ingredients[value])}</span>`).join("<i>→</i>")}</div><div class="ingredient-grid">${ingredients.map((item,index)=>`<button type="button" data-ingredient="${index}" ${hiding?"":"disabled"}>${escapeHtml(item)}</button>`).join("")}</div><p class="mini-status" id="recipeStatus">${hiding?`已选 ${input.length} / 3`:"看清顺序后开始"}</p></div>`,`<button class="action-button" id="startRecipe">${hiding?"再看配方":"开始调配"}</button><button class="action-button secondary" id="newRecipe">换一张</button>`);mount.querySelector("#startRecipe").addEventListener("click",()=>{hiding=!hiding;draw();});mount.querySelector("#newRecipe").addEventListener("click",newRecipe);mount.querySelectorAll("[data-ingredient]").forEach((button)=>button.addEventListener("click",()=>choose(Number(button.dataset.ingredient))));}
+    function choose(value){markPlayed(game);if(value!==recipe[input.length]){playSound("soft");hiding=false;input=[];showToast("差一点，再看一遍配方");draw();return;}input.push(value);playSound("glow");if(input.length===recipe.length){order+=1;setBest(game,order);playSound("success");if(order>=5){showToast("五份订单全部完成！");order=0;}timer=window.setTimeout(newRecipe,650);}else draw();}
+    newRecipe();return()=>window.clearTimeout(timer);
+  }
+
+  function renderMiniTap(mount, game) {
+    const config=game.config||{};const goal=config.goal||12;const canvas=canvasPanel(mount,game,`发现 0 / ${goal}`,`<span class="game-hint">轻点带光圈的目标</span><button class="action-button secondary" id="resetTap">重新开始</button>`);let width=1,height=1,score=0;let target={x:200,y:180,vx:.4,vy:.3};let decoys=[];
+    const surface=configureCanvas(canvas,(w,h)=>{width=w;height=h;target={x:rand(50,w-50),y:rand(60,h-60),vx:rand(-.6,.6),vy:rand(-.45,.45)};decoys=Array.from({length:11},()=>({x:rand(35,w-35),y:rand(45,h-45),phase:rand(0,TAU)}));});
+    function relocate(){target.x=rand(55,width-55);target.y=rand(65,height-65);target.vx=rand(-.8,.8);target.vy=rand(-.6,.6);}
+    function draw(time){const ctx=surface.context;paintMiniBackground(ctx,width,height,config.scene,time);decoys.forEach((item,index)=>{ctx.globalAlpha=.55;ctx.font=`${24+(index%3)*4}px sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(config.decoy||"◆",item.x,item.y+Math.sin(time*.001+item.phase)*5);});ctx.globalAlpha=1;target.x+=target.vx;target.y+=target.vy;if(target.x<45||target.x>width-45)target.vx*=-1;if(target.y<55||target.y>height-55)target.vy*=-1;const pulse=34+Math.sin(time*.005)*7;ctx.strokeStyle="#f1ca51";ctx.lineWidth=6;ctx.beginPath();ctx.arc(target.x,target.y,pulse,0,TAU);ctx.stroke();ctx.font="38px sans-serif";ctx.fillText(config.target||"✦",target.x,target.y);}
+    canvas.addEventListener("pointerdown",event=>{event.preventDefault();markPlayed(game);const point=surface.point(event);if(distance(point,target)<48){score+=1;playSound("catch");setScore(`发现 ${Math.min(score,goal)} / ${goal}`);setBest(game,score);relocate();if(score===goal){playSound("success");canvasMessage("十二个目标全部发现！");}}else playSound("soft");});mount.querySelector("#resetTap").addEventListener("click",()=>{score=0;setScore(`发现 0 / ${goal}`);relocate();});const stop=loopFrame(draw);return()=>{stop();surface.cleanup();};
+  }
+
+  function renderMiniBalance(mount, game) {
+    const config=game.config||{};const goal=config.goal||8;const canvas=canvasPanel(mount,game,`成功 0 / ${goal}`,`<span class="game-hint">光点进入绿色区域时行动</span><button class="action-button" id="balanceAction">${escapeHtml(config.action||"现在")}</button>`);let width=1,height=1,score=0,phase=0,speed=.0017;const surface=configureCanvas(canvas,(w,h)=>{width=w;height=h;});
+    function position(time){return .5+Math.sin(time*speed+phase)*.43;}
+    function draw(time){const ctx=surface.context;paintMiniBackground(ctx,width,height,config.scene,time);const y=height*.68;ctx.fillStyle="rgba(255,255,255,.75)";ctx.fillRect(width*.1,y-13,width*.8,26);ctx.fillStyle="#59a56d";ctx.fillRect(width*.42,y-13,width*.16,26);ctx.strokeStyle="#182127";ctx.lineWidth=3;ctx.strokeRect(width*.1,y-13,width*.8,26);const x=width*(.1+position(time)*.8);ctx.fillStyle="#f1ca51";ctx.strokeStyle="#182127";ctx.beginPath();ctx.arc(x,y,14,0,TAU);ctx.fill();ctx.stroke();ctx.font=`${54+score*2}px sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(config.object||"◆",width*.5,height*.38);for(let i=0;i<score;i+=1){ctx.fillStyle=["#ef795d","#67c3bd","#7397d8","#d47caf"][i%4];ctx.beginPath();ctx.arc(width*.5+(i%2?8:-8),height*.5-i*9,8,0,TAU);ctx.fill();}}
+    function act(){markPlayed(game);const now=performance.now();const value=position(now);if(Math.abs(value-.5)<=.1){score+=1;phase+=.7;speed+=.00008;playSound("success");setScore(`成功 ${Math.min(score,goal)} / ${goal}`);setBest(game,score);if(score===goal)canvasMessage("完美完成，还可以继续挑战手感！");}else{playSound("soft");canvasMessage(value<.5?"稍微早了一点":"稍微晚了一点");}}
+    mount.querySelector("#balanceAction").addEventListener("click",act);canvas.addEventListener("pointerdown",event=>{event.preventDefault();act();});const stop=loopFrame(draw);return()=>{stop();surface.cleanup();};
   }
 
   function renderCurrent() {

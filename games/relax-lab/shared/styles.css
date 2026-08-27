@@ -134,6 +134,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .preview-ocean { background: #bde6e8; }.preview-ocean::before { width: 55px; height: 31px; border: 2px solid var(--ink); border-radius: 50%; background: #f1ca51; }.preview-ocean::after { right: 18px; width: 0; height: 0; border-top: 17px solid transparent; border-bottom: 17px solid transparent; border-right: 24px solid #d9583b; }
 .preview-drum::before { width: 66px; height: 54px; border: 3px solid var(--ink); border-radius: 50%; background: #d9583b; box-shadow: 0 16px 0 -2px #9a5526; }
 .preview-plane::before { width: 0; height: 0; border-top: 17px solid transparent; border-bottom: 17px solid transparent; border-left: 72px solid #466b4f; transform: rotate(-12deg); }
+.preview-arcade { background-image: linear-gradient(transparent 49%, rgba(24,33,39,.12) 50%, transparent 51%), linear-gradient(90deg, transparent 49%, rgba(24,33,39,.12) 50%, transparent 51%); background-size: 28px 28px; }
+.preview-arcade::before { width: 68px; height: 68px; border: 2px solid var(--card-color); border-radius: 50%; background: color-mix(in srgb, var(--card-soft) 78%, white); box-shadow: 8px 8px 0 rgba(24,33,39,.12); }
+.preview-arcade::after { width: 10px; height: 10px; right: 12px; top: 13px; border-radius: 50%; background: var(--card-color); box-shadow: -76px 68px 0 var(--card-color), -4px 75px 0 var(--yellow); }
 .card-copy { min-width: 0; }
 .card-copy small, .card-copy strong, .card-copy span { display: block; }
 .card-copy small { margin-bottom: 5px; color: var(--card-color); font-size: 10px; font-weight: 950; }
@@ -199,6 +202,50 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .segments button.active { color: white; background: var(--game-color); }
 .game-hint { color: var(--muted); font-size: 10px; font-weight: 800; }
 
+.mini-stage { min-height: 510px; display: grid; place-items: center; padding: 24px; background: #edf4f3; }
+.mini-toolbar { justify-content: center; }
+.mini-status { min-height: 24px; margin: 16px 0 0; color: var(--muted); font-size: 12px; font-weight: 850; text-align: center; }
+.route-scene, .toggle-wrap, .recipe-stage, .mini-memory { width: min(620px, 100%); }
+.mini-route-grid { width: min(520px, 100%); aspect-ratio: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0 auto; padding: 10px; border: 2px solid var(--ink); background: rgba(255,255,255,.72); }
+.mini-route-grid button { min-width: 0; aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: 5px; color: var(--muted); background: rgba(255,255,255,.54); font-size: 20px; font-weight: 950; transition: transform .12s ease, background .12s ease; }
+.mini-route-grid button.track { border-color: rgba(24,33,39,.36); background: var(--game-soft); }
+.mini-route-grid button.reached { color: white; border-color: var(--game-color); background: var(--game-color); }
+.mini-route-grid button.current { color: var(--ink); border-color: var(--ink); background: var(--yellow); transform: scale(.9); }
+.mini-route-grid button.next { border-color: var(--game-color); animation: route-pulse .8s ease-in-out infinite alternate; }
+.mini-route-grid button.route-wrong { background: #f7d9d5; animation: route-wrong .25s linear; }
+.scene-ocean .mini-route-grid { background: #bde1e5; }.scene-forest .mini-route-grid { background: #dcebd7; }.scene-neon .mini-route-grid { background: #252641; }
+
+.piece-palette { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.piece-button { width: 46px; height: 46px; flex: 0 0 46px; padding: 0; border: 2px solid var(--ink); border-radius: 6px; background: var(--surface); font-size: 23px; }
+.piece-button.active { background: var(--yellow); box-shadow: inset 0 0 0 3px var(--game-color); }
+
+.mini-memory { text-align: center; }
+.mini-memory > p, .recipe-stage > p { min-height: 24px; margin: 0 0 18px; font-size: 15px; font-weight: 900; }
+.mini-pad-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.mini-pad { min-height: 130px; border: 3px solid var(--ink); border-radius: 7px; color: white; background: var(--pad); box-shadow: 0 8px 0 rgba(24,33,39,.55); font-size: 25px; font-weight: 950; transition: transform .09s ease, filter .09s ease; }
+.mini-pad.pad-0 { --pad:#d9583b; }.mini-pad.pad-1 { --pad:#087e8b; }.mini-pad.pad-2 { --pad:#376ab0; }.mini-pad.pad-3 { --pad:#9a4f80; }
+.mini-pad.active { transform: translateY(6px); filter: brightness(1.28); box-shadow: 0 2px 0 var(--ink); }
+.memory-lights { min-height: 24px; display: flex; justify-content: center; gap: 7px; margin-top: 20px; }
+.memory-lights i { width: 13px; height: 13px; border: 2px solid var(--ink); border-radius: 50%; background: white; }
+.memory-lights i.done { background: var(--yellow); }
+
+.toggle-grid { width: min(470px, 100%); aspect-ratio: 1; display: grid; grid-template-columns: repeat(var(--toggle-size), 1fr); gap: 7px; margin: 0 auto; padding: 11px; border: 2px solid var(--ink); background: #23263c; }
+.toggle-grid button { min-width: 0; aspect-ratio: 1; padding: 0; border: 2px solid rgba(255,255,255,.34); border-radius: 6px; color: #81869b; background: #35394f; font-size: 24px; font-weight: 950; transition: transform .14s ease, background .14s ease, color .14s ease; }
+.toggle-grid button.on { color: #fff4aa; border-color: var(--yellow); background: var(--game-color); box-shadow: 0 0 14px rgba(241,202,81,.42); transform: scale(.94); }
+
+.recipe-stage { text-align: center; }
+.recipe-card { min-height: 100px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 26px; padding: 16px; border: 2px solid var(--ink); background: var(--surface); }
+.recipe-card span { min-width: 74px; min-height: 62px; display: grid; place-items: center; padding: 8px; border: 2px solid var(--ink); border-radius: 6px; color: var(--game-color); background: var(--game-soft); font-size: 20px; font-weight: 950; }
+.recipe-card.hidden span { color: var(--muted); background: #ece9e1; }
+.recipe-card span.done { color: white; background: var(--game-color); }
+.recipe-card i { color: var(--muted); font-size: 20px; font-style: normal; }
+.ingredient-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ingredient-grid button { min-height: 78px; padding: 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--surface); font-size: 19px; font-weight: 900; }
+.ingredient-grid button:disabled { opacity: .45; }
+
+@keyframes route-pulse { from { box-shadow: 0 0 0 0 rgba(241,202,81,.15); } to { box-shadow: 0 0 0 6px rgba(241,202,81,.4); } }
+@keyframes route-wrong { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
 .rhythm-stage { min-height: 510px; padding: 24px; background: #fff9ec; }
 .rhythm-visual { min-height: 72px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px; font-size: 14px; font-weight: 900; text-align: center; }
 .beat-lights { display: flex; justify-content: center; gap: 8px; }
@@ -257,6 +304,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .rhythm-stage { min-height: 450px; padding: 18px 12px; }
   .drum-grid { gap: 11px; }
   .drum-pad { min-height: 96px; font-size: 15px; }
+  .mini-stage { min-height: 450px; padding: 14px 10px; }
+  .mini-route-grid { gap: 4px; padding: 7px; }
+  .mini-route-grid button { font-size: 16px; }
+  .mini-pad-grid { gap: 9px; }.mini-pad { min-height: 100px; font-size: 20px; }
+  .recipe-card { gap: 5px; padding: 9px; }.recipe-card span { min-width: 0; flex: 1; min-height: 58px; font-size: 16px; }.recipe-card i { font-size: 14px; }
+  .ingredient-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.ingredient-grid button { min-height: 62px; }
 }
 
 @media (orientation: landscape) and (max-height: 700px) and (min-width: 700px) {
@@ -267,6 +320,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .rhythm-stage { min-height: 390px; padding: 14px 24px; }
   .drum-grid { width: min(680px, 100%); grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; }
   .drum-pad { min-height: 92px; aspect-ratio: 1.35; }
+  .mini-stage { min-height: 390px; padding: 12px; }
+  .mini-route-grid { width: 355px; }
+  .mini-pad-grid { grid-template-columns: repeat(4, 1fr); }.mini-pad { min-height: 105px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

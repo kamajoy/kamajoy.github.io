@@ -64,6 +64,7 @@
   progress.stars = Number(progress.stars) || 0;
   progress.activities = progress.activities || {};
   progress.drafts = progress.drafts || {};
+  progress.mastered = progress.mastered || {};
   progress.audioEnabled = progress.audioEnabled !== false;
 
   function normalizeSpeech(value) {
@@ -257,6 +258,15 @@
     return progress.activities[`${app.id}:${activity.id}`] || null;
   }
 
+  function activityKey(app, activity) {
+    return `${app.id}:${activity.id}`;
+  }
+
+  function masteredQuestions(app, activity) {
+    const value = progress.mastered[activityKey(app, activity)];
+    return Array.isArray(value) ? value : [];
+  }
+
   function starsMarkup(count) {
     return [1, 2, 3].map((star) => `<span class="${star <= count ? "earned" : ""}">★</span>`).join("");
   }
@@ -283,7 +293,7 @@
   }
 
   function renderHub() {
-    document.title = "奇趣脑力岛 · 7-10岁益智乐园";
+    document.title = "奇趣脑力岛 · 8-10岁进阶益智乐园";
     document.documentElement.style.setProperty("--theme", "#ef5b3f");
     document.documentElement.style.setProperty("--theme-soft", "#ffe5dc");
     const completed = CATALOG.reduce((sum, app) => sum + totalComplete(app), 0);
@@ -295,9 +305,9 @@
       <main class="hub-main">
         <section class="hub-hero">
           <div class="hero-copy">
-            <p class="eyebrow">7-10岁 · 10个主题 · 96项活动</p>
+            <p class="eyebrow">8-10岁 · 10个主题 · 96项进阶活动</p>
             <h1>奇趣脑力岛</h1>
-            <p>今天想去哪里探险？每次玩 10-20 分钟，发现自己的新本领。</p>
+            <p>每项挑战都从热身走向高手任务；答对的新题会被收藏，不再重复出现。</p>
             <div class="overall-progress"><span><b>${completed}</b> / 96 项已体验</span><div><i style="width:${Math.round(completed / 96 * 100)}%"></i></div></div>
           </div>
           <img class="hero-art" src="assets/brain-lab-cover.svg" alt="由数字、迷宫、画笔和积木组成的脑力岛">
@@ -340,7 +350,7 @@
                 <a class="activity-card" href="#activity=${activity.id}">
                   <span class="activity-number">${String(index + 1).padStart(2, "0")}</span>
                   <span class="activity-copy"><strong>${activity.title}</strong><small>${activity.description}</small></span>
-                  <span class="activity-stars" aria-label="${record ? record.stars : 0} 星">${starsMarkup(record ? record.stars : 0)}</span>
+                  <span class="activity-stars" aria-label="${record ? record.stars : 0} 星">${starsMarkup(record ? record.stars : 0)}${activity.kind === "quiz" ? `<small>已掌握 ${masteredQuestions(app, activity).length} 题</small>` : ""}</span>
                 </a>`;
             }).join("")}
           </div>
@@ -358,14 +368,18 @@
     return shuffle(Array.from(values).map(String));
   }
 
-  function bankQuestion(items) {
-    const item = pick(items);
+  function bankQuestion(items, level) {
+    const requestedLevel = Math.max(1, Math.min(4, Number(level) || 1));
+    const exact = items.filter((entry) => (Number(entry[5]) || 1) === requestedLevel);
+    const available = exact.length ? exact : items.filter((entry) => (Number(entry[5]) || 1) <= requestedLevel);
+    const item = pick(available.length ? available : items);
     return {
       prompt: item[0],
       visual: item[1] || "",
       answer: String(item[2]),
       options: shuffle(item[3].map(String)),
-      explain: item[4] || `正确答案是“${item[2]}”。`
+      explain: item[4] || `正确答案是“${item[2]}”。`,
+      difficulty: Number(item[5]) || requestedLevel
     };
   }
 
@@ -512,9 +526,13 @@
     ]
   };
 
-  function questionFor(factory, round) {
-    if (factory === "escape") return bankQuestion([QUESTION_BANKS.escape[(round || 0) % QUESTION_BANKS.escape.length]]);
-    if (QUESTION_BANKS[factory]) return bankQuestion(QUESTION_BANKS[factory]);
+  Object.keys(window.BRAIN_QUESTION_PACKS || {}).forEach((factory) => {
+    QUESTION_BANKS[factory] = (QUESTION_BANKS[factory] || []).concat(window.BRAIN_QUESTION_PACKS[factory]);
+  });
+
+  function questionFor(factory, round, level) {
+    const difficulty = Math.max(1, Math.min(4, Number(level) || 1));
+    if (QUESTION_BANKS[factory]) return bankQuestion(QUESTION_BANKS[factory], difficulty);
 
     if (factory === "oddVisual") {
       const sets = [["●", "●", "●", "◉"], ["▲", "▲", "△", "▲"], ["↗", "↗", "↖", "↗"], ["🍎", "🍎", "🍏", "🍎"]];
@@ -544,15 +562,24 @@
     }
 
     if (factory === "numberFriends" || factory === "makeTen") {
-      const target = factory === "makeTen" ? 10 : rand(8, 20);
+      const ranges = [20, 50, 100, 300];
+      const target = factory === "makeTen" && difficulty === 1 ? 10 : rand(difficulty === 1 ? 8 : 20, ranges[difficulty - 1]);
       const left = rand(1, target - 1);
       const answer = target - left;
       return { prompt: `哪个数字和 ${left} 合起来正好是 ${target}？`, visual: `<div class=math-bubbles><span>${left}</span><i>＋</i><span>?</span><i>＝</i><b>${target}</b></div>`, answer: String(answer), options: uniqueNumberOptions(answer, 4), explain: `${target} − ${left} = ${answer}。` };
     }
 
     if (factory === "arithmetic") {
+      if (difficulty >= 3 && Math.random() > 0.48) {
+        const multiply = Math.random() > 0.35;
+        const right = rand(2, difficulty === 4 ? 12 : 9);
+        const answer = multiply ? rand(3, difficulty === 4 ? 16 : 12) : rand(2, difficulty === 4 ? 12 : 9);
+        const left = multiply ? answer : answer * right;
+        const result = multiply ? left * right : answer;
+        return { prompt: "算一算，选择正确答案。", visual: `<div class=big-math>${left} ${multiply ? "×" : "÷"} ${right} = ?</div>`, answer: String(result), options: uniqueNumberOptions(result, difficulty === 4 ? 12 : 7), explain: `${left} ${multiply ? "×" : "÷"} ${right} = ${result}。`, difficulty };
+      }
       const add = Math.random() > 0.45;
-      const max = rand(0, 1) ? 20 : 50;
+      const max = [20, 100, 500, 2000][difficulty - 1];
       let left;
       let right;
       let answer;
@@ -565,13 +592,15 @@
     }
 
     if (factory === "compare") {
-      const a = rand(4, 40); const b = rand(4, 40);
+      const max = [40, 100, 500, 2000][difficulty - 1];
+      const a = rand(4, max); const b = rand(4, max);
       const answer = a === b ? "=" : a > b ? ">" : "<";
       return { prompt: "在圆圈里填入正确的比较符号。", visual: `<div class=big-math>${a}　○　${b}</div>`, answer, options: shuffle([">", "=", "<"]), explain: `${a} ${answer} ${b}。` };
     }
 
     if (factory === "missingNumber") {
-      const add = Math.random() > 0.35; const answer = rand(2, 12); const known = rand(2, 15);
+      const max = [15, 40, 120, 500][difficulty - 1];
+      const add = Math.random() > 0.35; const answer = rand(2, max); const known = rand(2, max);
       if (add) return { prompt: "找回藏起来的数字。", visual: `<div class=big-math>? + ${known} = ${answer + known}</div>`, answer: String(answer), options: uniqueNumberOptions(answer, 5), explain: `${answer + known} − ${known} = ${answer}。` };
       return { prompt: "找回藏起来的数字。", visual: `<div class=big-math>${answer + known} − ? = ${known}</div>`, answer: String(answer), options: uniqueNumberOptions(answer, 5), explain: `${answer + known} − ${answer} = ${known}。` };
     }
@@ -587,19 +616,23 @@
     }
 
     if (factory === "shapeMath") {
-      const circle = rand(2, 7); const triangle = rand(1, 6); const answer = circle + triangle;
+      const circle = rand(2, 7 + difficulty * 2); const triangle = rand(1, 6 + difficulty * 2); const answer = difficulty >= 3 ? circle * 2 + triangle : circle + triangle;
+      if (difficulty >= 3) return { prompt: "根据前两行，算出最后一行。", visual: `<div class=shape-equation><span>● + ● = ${circle * 2}</span><span>▲ + ▲ = ${triangle * 2}</span><b>● × 2 + ▲ = ?</b></div>`, answer: String(answer), options: uniqueNumberOptions(answer, 7), explain: `圆形是 ${circle}，三角形是 ${triangle}，所以 ${circle} × 2 + ${triangle} = ${answer}。`, difficulty };
       return { prompt: "根据前两行，算出最后一行。", visual: `<div class=shape-equation><span>● + ● = ${circle * 2}</span><span>▲ + ▲ = ${triangle * 2}</span><b>● + ▲ = ?</b></div>`, answer: String(answer), options: uniqueNumberOptions(answer, 4), explain: `圆形是 ${circle}，三角形是 ${triangle}，合起来是 ${answer}。` };
     }
 
     if (factory === "shopping" || factory === "money") {
-      const price = rand(3, 18); const paid = [10, 20, 50].find((value) => value >= price) || 50; const answer = paid - price;
+      const limits = [18, 48, 98, 198];
+      const price = rand(3, limits[difficulty - 1]); const paid = [10, 20, 50, 100, 200].find((value) => value >= price) || 200; const answer = paid - price;
       return { prompt: `商品 ${price} 元，付 ${paid} 元，应找回多少元？`, visual: `<div class=shop-visual><span>🎒</span><b>¥${price}</b><i>付款 ¥${paid}</i></div>`, answer: String(answer), options: uniqueNumberOptions(answer, 5), explain: `${paid} − ${price} = ${answer} 元。` };
     }
 
     if (factory === "clock") {
-      const hour = rand(1, 11); const half = Math.random() > 0.5; const minute = half ? 30 : 0; const minuteAngle = minute * 6; const hourAngle = hour * 30 + minute * 0.5;
-      const answer = `${hour}点${half ? "半" : ""}`;
-      const options = shuffle([answer, `${hour + 1}点${half ? "半" : ""}`, `${hour}点${half ? "" : "半"}`, `${Math.max(1, hour - 1)}点${half ? "半" : ""}`]);
+      const hour = rand(1, 11); const minutes = difficulty === 1 ? [0, 30] : difficulty === 2 ? [0, 15, 30, 45] : [5, 10, 20, 25, 35, 40, 50, 55];
+      const minute = pick(minutes); const minuteAngle = minute * 6; const hourAngle = hour * 30 + minute * 0.5;
+      const minuteText = minute === 0 ? "" : minute === 30 ? "半" : `${minute}分`;
+      const answer = `${hour}点${minuteText}`;
+      const options = shuffle([answer, `${hour + 1}点${minuteText}`, `${hour}点${minute === 30 ? "15分" : "半"}`, `${Math.max(1, hour - 1)}点${minuteText}`]);
       return { prompt: "钟面显示几点？", visual: `<div class=clock-face><i class=hour-hand style="transform:rotate(${hourAngle}deg)"></i><i class=minute-hand style="transform:rotate(${minuteAngle}deg)"></i><b></b></div>`, answer, options: Array.from(new Set(options)), explain: `短针指向 ${hour} 附近，长针${half ? "指向 6" : "指向 12"}，是${answer}。` };
     }
 
@@ -612,7 +645,7 @@
     }
 
     if (factory === "cipher") {
-      const step = rand(2, 5); const a = rand(1, 8); const seq = [a, a + step, a + step * 2, a + step * 3]; const answer = a + step * 4;
+      const step = rand(2, 5 + difficulty * 2); const a = rand(1, 8 + difficulty * 4); const seq = [a, a + step, a + step * 2, a + step * 3]; const answer = a + step * 4;
       return { prompt: "破解数字密码，找出最后一位。", visual: `<div class=code-strip>${seq.join(" · ")} · ?</div>`, answer: String(answer), options: uniqueNumberOptions(answer, 5), explain: `每次增加 ${step}，所以最后一位是 ${answer}。` };
     }
 
@@ -622,12 +655,12 @@
     }
 
     if (factory === "cubeCount") {
-      const bottom = rand(3, 6); const middle = rand(1, Math.min(3, bottom)); const top = rand(0, 1); const answer = bottom + middle + top;
+      const bottom = rand(3 + difficulty, 6 + difficulty * 3); const middle = rand(1, Math.min(3 + difficulty, bottom)); const top = rand(0, difficulty); const answer = bottom + middle + top;
       return { prompt: "分层数一数，一共有多少块积木？", visual: `<div class=cube-layers><span>顶层 ${top} 块</span><span>中层 ${middle} 块</span><span>底层 ${bottom} 块</span></div>`, answer: String(answer), options: uniqueNumberOptions(answer, 4), explain: `${bottom} + ${middle} + ${top} = ${answer} 块。` };
     }
 
     if (factory === "direction" || factory === "mapTreasure") {
-      const moves = pick([[["东", 2], ["北", 1]], [["西", 1], ["南", 2]], [["北", 2], ["东", 1]]]);
+      const moves = pick([[["东", 2 + difficulty], ["北", 1]], [["西", 1 + difficulty], ["南", 2]], [["北", 2 + difficulty], ["东", 1]], [["南", difficulty], ["东", 2 + difficulty]]]);
       const map = { "东": [1, 0], "西": [-1, 0], "北": [0, 1], "南": [0, -1] }; let x = 0; let y = 0;
       moves.forEach(([dir, n]) => { x += map[dir][0] * n; y += map[dir][1] * n; });
       const answer = x > 0 ? "起点东北边" : x < 0 ? "起点西南边" : y > 0 ? "起点北边" : "起点南边";
@@ -712,26 +745,79 @@
     mount.querySelector("#retryActivity").addEventListener("click", retry);
   }
 
+  function questionId(question) {
+    const source = `${normalizeSpeech(question.prompt)}|${normalizeSpeech(textFromMarkup(question.visual || ""))}|${question.answer}`;
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `q${(hash >>> 0).toString(36)}`;
+  }
+
+  function difficultyName(level) {
+    return ["新手热身", "进阶探索", "挑战推理", "高手任务"][Math.max(0, Math.min(3, level - 1))];
+  }
+
+  function nextUnmasteredQuestion(app, activity, startLevel, sessionSeen) {
+    const mastered = new Set(masteredQuestions(app, activity));
+    const levels = [];
+    for (let level = startLevel; level <= 4; level += 1) levels.push(level);
+    for (let level = 1; level < startLevel; level += 1) levels.push(level);
+    for (const level of levels) {
+      for (let attempt = 0; attempt < 180; attempt += 1) {
+        const question = questionFor(activity.factory, attempt, level);
+        const id = questionId(question);
+        if (!mastered.has(id) && !sessionSeen.has(id)) return Object.assign(question, { id, difficulty: question.difficulty || level });
+      }
+    }
+    return null;
+  }
+
+  function renderMastered(mount, app, activity) {
+    playSfx("complete");
+    mount.innerHTML = `
+      <div class="result-panel mastery-complete">
+        <div class="result-burst" aria-hidden="true">✓</div>
+        <p class="eyebrow">全部掌握</p>
+        <h2>这组新题已经完成</h2>
+        <div class="mastery-total">已掌握 ${masteredQuestions(app, activity).length} 题</div>
+        <p>答对的题目不会再次出现。可以回到目录选择下一项挑战。</p>
+        <div class="result-actions"><a class="button primary" href="./">返回活动目录</a></div>
+      </div>`;
+  }
+
   function renderQuiz(mount, app, activity) {
-    const total = activity.factory === "escape" ? 3 : 5;
+    const total = 12;
     let round = 0;
     let correct = 0;
+    let streak = 0;
     let answered = false;
+    const sessionSeen = new Set();
 
-    function finish() {
-      const rate = correct / total;
+    function finish(exhausted) {
+      if (round === 0 && exhausted) return renderMastered(mount, app, activity);
+      const attempted = Math.max(1, round);
+      const rate = correct / attempted;
       const stars = rate >= 0.8 ? 3 : rate >= 0.6 ? 2 : 1;
-      renderResult(mount, app, activity, stars, rate >= 0.8 ? "观察得很仔细！" : "完成一次完整思考", `答对 ${correct} / ${total} 题，再玩一次会遇到新题目。`, () => renderQuiz(mount, app, activity));
+      const title = rate >= 0.9 ? "高手任务完成！" : rate >= 0.7 ? "思路越来越清楚了" : "完成一次认真探索";
+      const suffix = exhausted ? "这组未掌握的新题已经全部完成。" : "下次会继续出现未掌握的新题。";
+      renderResult(mount, app, activity, stars, title, `答对 ${correct} / ${attempted} 题，${suffix}`, () => renderQuiz(mount, app, activity));
     }
 
     function nextQuestion() {
-      if (round >= total) return finish();
+      if (round >= total) return finish(false);
       answered = false;
-      const question = questionFor(activity.factory, round);
+      const targetLevel = Math.min(4, Math.floor(round / 3) + 1);
+      const question = nextUnmasteredQuestion(app, activity, targetLevel, sessionSeen);
+      if (!question) return finish(true);
+      sessionSeen.add(question.id);
+      const level = question.difficulty || targetLevel;
       const optionValues = question.optionValues || question.options;
       mount.innerHTML = `
         <div class="challenge-panel">
-          ${roundHeader(round, total, "思考挑战")}
+          ${roundHeader(round, total, difficultyName(level))}
+          <div class="challenge-meta"><span class="difficulty-badge level-${level}">${difficultyName(level)}</span><span>连续答对 <b>${streak}</b> · 累计掌握 <b>${masteredQuestions(app, activity).length}</b> 题</span></div>
           <div class="question-area">
             ${spokenPrompt(question.prompt, questionSpeech(question))}
             ${question.visual ? `<div class="question-visual">${question.visual}</div>` : ""}
@@ -748,7 +834,18 @@
           answered = true;
           const isCorrect = button.dataset.value === question.answer;
           playSfx(isCorrect ? "success" : "wrong");
-          if (isCorrect) correct += 1;
+          if (isCorrect) {
+            correct += 1;
+            streak += 1;
+            const mastered = masteredQuestions(app, activity);
+            if (!mastered.includes(question.id)) {
+              mastered.push(question.id);
+              progress.mastered[activityKey(app, activity)] = mastered;
+              saveProgress();
+            }
+          } else {
+            streak = 0;
+          }
           button.classList.add(isCorrect ? "correct" : "wrong");
           mount.querySelectorAll(".answer-button").forEach((entry) => {
             entry.disabled = true;
@@ -756,7 +853,7 @@
           });
           const feedback = mount.querySelector("#feedbackBox");
           feedback.className = `feedback-box show ${isCorrect ? "good" : "try"}`;
-          feedback.innerHTML = `<strong>${isCorrect ? "答对了" : "再看一步"}</strong><span>${escapeHtml(question.explain)}</span><button class="button primary" id="nextQuestion">${round + 1 >= total ? "查看结果" : "下一题"}</button>`;
+          feedback.innerHTML = `<strong>${isCorrect ? (streak >= 3 ? `连对 ${streak} 题` : "答对了") : "拆开线索再看"}</strong><span>${escapeHtml(question.explain)}</span><button class="button primary" id="nextQuestion">${round + 1 >= total ? "查看结果" : "下一题"}</button>`;
           feedback.querySelector("#nextQuestion").addEventListener("click", () => { round += 1; nextQuestion(); });
         });
       });
@@ -1452,6 +1549,7 @@
     const activity = match ? app.activities.find((item) => item.id === match[1]) : null;
     if (activity) renderActivity(app, activity);
     else { activeAudioTheme = null; if (activeCleanup) activeCleanup(); activeCleanup = null; renderAppHome(app); }
+    window.requestAnimationFrame(() => window.scrollTo(0, 0));
   }
 
   appRoot.addEventListener("pointerdown", (event) => {
