@@ -91,15 +91,16 @@
     return normalizeSpeech(holder.textContent || "");
   }
 
-  function speechButton(text, label, extraClass) {
-    return `<button class="speak-button speech-button ${extraClass || ""}" type="button" data-speech="${escapeHtml(normalizeSpeech(text))}" aria-label="${escapeHtml(label || "朗读题目")}" title="${escapeHtml(label || "朗读题目")}"><span aria-hidden="true">🔊</span></button>`;
+  function speechButton(text, label, extraClass, lang) {
+    return `<button class="speak-button speech-button ${extraClass || ""}" type="button" data-speech="${escapeHtml(normalizeSpeech(text))}" data-lang="${escapeHtml(lang || "zh-CN")}" aria-label="${escapeHtml(label || "朗读题目")}" title="${escapeHtml(label || "朗读题目")}"><span aria-hidden="true">🔊</span></button>`;
   }
 
-  function spokenPrompt(text, speech, extraClass) {
-    return `<div class="spoken-prompt ${extraClass || ""}"><h2>${escapeHtml(text)}</h2>${speechButton(speech || text, "朗读题目", "prompt-speak")}</div>`;
+  function spokenPrompt(text, speech, extraClass, lang) {
+    return `<div class="spoken-prompt ${extraClass || ""}"><h2>${escapeHtml(text)}</h2>${speechButton(speech || text, "朗读题目", "prompt-speak", lang)}</div>`;
   }
 
   function questionSpeech(question) {
+    if (question.speech) return normalizeSpeech(question.speech);
     return normalizeSpeech(`${question.prompt || ""} ${textFromMarkup(question.visual || "")}`);
   }
 
@@ -199,8 +200,8 @@
     window.speechSynthesis.cancel();
     if (activeSpeechButton) activeSpeechButton.classList.remove("speaking");
     const utterance = new window.SpeechSynthesisUtterance(normalizeSpeech(text));
-    utterance.lang = "zh-CN";
-    utterance.rate = 0.82;
+    utterance.lang = button.dataset.lang || "zh-CN";
+    utterance.rate = utterance.lang.toLowerCase().startsWith("en") ? 0.76 : 0.82;
     utterance.pitch = 1.05;
     activeSpeechButton = button;
     button.classList.add("speaking");
@@ -297,6 +298,7 @@
     document.documentElement.style.setProperty("--theme", "#ef5b3f");
     document.documentElement.style.setProperty("--theme-soft", "#ffe5dc");
     const completed = CATALOG.reduce((sum, app) => sum + totalComplete(app), 0);
+    const totalActivities = CATALOG.reduce((sum, app) => sum + app.activities.length, 0);
     appRoot.innerHTML = `
       <header class="hub-topbar">
         <a class="wordmark" href="../../../"><span class="wordmark-mark">K</span><span><strong>Kamajoy</strong><small>网页游戏</small></span></a>
@@ -305,10 +307,10 @@
       <main class="hub-main">
         <section class="hub-hero">
           <div class="hero-copy">
-            <p class="eyebrow">8-10岁 · 10个主题 · 96项进阶活动</p>
+            <p class="eyebrow">8-10岁 · 10个主题 · ${totalActivities}项进阶活动</p>
             <h1>奇趣脑力岛</h1>
             <p>每项挑战都从热身走向高手任务；答对的新题会被收藏，不再重复出现。</p>
-            <div class="overall-progress"><span><b>${completed}</b> / 96 项已体验</span><div><i style="width:${Math.round(completed / 96 * 100)}%"></i></div></div>
+            <div class="overall-progress"><span><b>${completed}</b> / ${totalActivities} 项已体验</span><div><i style="width:${Math.round(completed / totalActivities * 100)}%"></i></div></div>
           </div>
           <img class="hero-art" src="assets/brain-lab-cover.svg" alt="由数字、迷宫、画笔和积木组成的脑力岛">
         </section>
@@ -373,14 +375,15 @@
     const exact = items.filter((entry) => (Number(entry[5]) || 1) === requestedLevel);
     const available = exact.length ? exact : items.filter((entry) => (Number(entry[5]) || 1) <= requestedLevel);
     const item = pick(available.length ? available : items);
-    return {
+    const metadata = item[6] && typeof item[6] === "object" ? item[6] : {};
+    return Object.assign({
       prompt: item[0],
       visual: item[1] || "",
       answer: String(item[2]),
       options: shuffle(item[3].map(String)),
       explain: item[4] || `正确答案是“${item[2]}”。`,
       difficulty: Number(item[5]) || requestedLevel
-    };
+    }, metadata);
   }
 
   const QUESTION_BANKS = {
@@ -633,7 +636,7 @@
       const minuteText = minute === 0 ? "" : minute === 30 ? "半" : `${minute}分`;
       const answer = `${hour}点${minuteText}`;
       const options = shuffle([answer, `${hour + 1}点${minuteText}`, `${hour}点${minute === 30 ? "15分" : "半"}`, `${Math.max(1, hour - 1)}点${minuteText}`]);
-      return { prompt: "钟面显示几点？", visual: `<div class=clock-face><i class=hour-hand style="transform:rotate(${hourAngle}deg)"></i><i class=minute-hand style="transform:rotate(${minuteAngle}deg)"></i><b></b></div>`, answer, options: Array.from(new Set(options)), explain: `短针指向 ${hour} 附近，长针${half ? "指向 6" : "指向 12"}，是${answer}。` };
+      return { prompt: "钟面显示几点？", visual: `<div class=clock-face><i class=hour-hand style="transform:rotate(${hourAngle}deg)"></i><i class=minute-hand style="transform:rotate(${minuteAngle}deg)"></i><b></b></div>`, answer, options: Array.from(new Set(options)), explain: `短针指向 ${hour} 附近，长针对应 ${minute} 分，所以是${answer}。` };
     }
 
     if (factory === "measure") {
@@ -746,7 +749,8 @@
   }
 
   function questionId(question) {
-    const source = `${normalizeSpeech(question.prompt)}|${normalizeSpeech(textFromMarkup(question.visual || ""))}|${question.answer}`;
+    const speechPart = question.speech ? `${normalizeSpeech(question.speech)}|` : "";
+    const source = `${normalizeSpeech(question.prompt)}|${speechPart}${normalizeSpeech(textFromMarkup(question.visual || ""))}|${question.answer}`;
     let hash = 2166136261;
     for (let index = 0; index < source.length; index += 1) {
       hash ^= source.charCodeAt(index);
@@ -819,7 +823,7 @@
           ${roundHeader(round, total, difficultyName(level))}
           <div class="challenge-meta"><span class="difficulty-badge level-${level}">${difficultyName(level)}</span><span>连续答对 <b>${streak}</b> · 累计掌握 <b>${masteredQuestions(app, activity).length}</b> 题</span></div>
           <div class="question-area">
-            ${spokenPrompt(question.prompt, questionSpeech(question))}
+            ${spokenPrompt(question.prompt, questionSpeech(question), "", question.speechLang)}
             ${question.visual ? `<div class="question-visual">${question.visual}</div>` : ""}
             <div class="answer-options ${question.options.length === 3 ? "three" : ""}">
               ${question.options.map((option, index) => `<button class="answer-button" data-value="${escapeHtml(optionValues[index])}">${option}</button>`).join("")}
