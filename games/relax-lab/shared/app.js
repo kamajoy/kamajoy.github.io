@@ -147,6 +147,7 @@
       builder: [329.63, 415.3, 493.88, 659.25], trail: [220, 329.63, 440, 554.37],
       memory: [261.63, 392, 523.25, 659.25], toggle: [246.94, 329.63, 415.3, 493.88],
       recipe: [349.23, 440, 523.25, 587.33], tap: [392, 493.88, 659.25, 783.99],
+      keyboard: [261.63, 392, 523.25, 392],
       balance: [293.66, 392, 493.88, 392]
     };
     const notes = AMBIENT[GAME_ID] || (game && modeNotes[game.mode]);
@@ -1033,7 +1034,114 @@
     draw(); return surface.cleanup;
   }
 
+  function renderElectronicKeyboard(mount, game) {
+    const config = game.config || {};
+    const pads = config.pads || ["Do", "Re", "Mi", "Fa", "Sol", "La", "Ti", "Do高"];
+    const notes = config.notes || [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25];
+    const colors = config.colors || ["#e96b5c", "#e99150", "#e8bd4f", "#63a66a", "#54a6a5", "#668bc2", "#7e70b2", "#9b65a5"];
+    const keyMap = config.keys || [];
+    const timbres = ["sine", "triangle", "square"];
+    const timbreNames = ["清亮", "木琴", "电子"];
+    let timbre = 0;
+    let recording = false;
+    let playing = false;
+    let song = [];
+    let demoIndex = 0;
+    let startedAt = 0;
+    let timers = [];
+    mount.innerHTML = `<div class="game-panel keyboard-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">音符 0</span></div><div class="keyboard-stage"><div class="keyboard-scene" id="keyboardScene"><div class="keyboard-sparkles" aria-hidden="true"></div><p id="keyboardStatus">轻点琴键，开始演奏</p></div><div class="keyboard-keys" role="group" aria-label="电子琴琴键">${pads.map((label, index) => `<button type="button" class="keyboard-key" data-key-index="${index}" style="--key-color:${colors[index % colors.length]}" aria-label="弹奏${escapeHtml(label)}" title="弹奏${escapeHtml(label)}${keyMap[index] ? `（${escapeHtml(keyMap[index])}键）` : ""}"><span>${escapeHtml(label)}</span><small>${escapeHtml(String(index + 1).padStart(2, "0"))}</small></button>`).join("")}</div><p class="keyboard-tip">弹奏时会自动记录音符；电脑上也可以用 ${escapeHtml(keyMap.slice(0, 8).join(" ") || "数字键")} 键演奏</p></div><div class="toolbar keyboard-toolbar"><div class="keyboard-actions"><button type="button" class="action-button" id="keyboardDemo">▶ 听示范</button><button type="button" class="action-button secondary" id="keyboardRecord" aria-pressed="false">● 录音</button><button type="button" class="action-button secondary" id="keyboardPlay" disabled>▷ 回放</button><button type="button" class="action-button secondary" id="keyboardTone">音色：清亮</button><button type="button" class="tool-icon" id="keyboardClear" aria-label="清空录音" title="清空录音">×</button></div></div></div>`;
+    const keys = Array.from(mount.querySelectorAll("[data-key-index]"));
+    const scene = mount.querySelector("#keyboardScene");
+    const status = mount.querySelector("#keyboardStatus");
+    const recordButton = mount.querySelector("#keyboardRecord");
+    const playButton = mount.querySelector("#keyboardPlay");
+    const clearButton = mount.querySelector("#keyboardClear");
+    const toneButton = mount.querySelector("#keyboardTone");
+    function clearTimers() { timers.forEach((timer) => window.clearTimeout(timer)); timers = []; playing = false; }
+    function syncControls() {
+      recordButton.textContent = recording ? "■ 停止录音" : "● 录音";
+      recordButton.setAttribute("aria-pressed", String(recording));
+      recordButton.classList.toggle("recording", recording);
+      playButton.disabled = recording || playing || song.length === 0;
+      clearButton.disabled = recording || playing || song.length === 0;
+      toneButton.textContent = `音色：${timbreNames[timbre]}`;
+    }
+    function flash(index) {
+      const key = keys[index];
+      if (!key) return;
+      key.classList.add("active");
+      window.setTimeout(() => key.classList.remove("active"), 260);
+      scene.classList.remove("keyboard-pulse");
+      void scene.offsetWidth;
+      scene.classList.add("keyboard-pulse");
+    }
+    function playNote(index, shouldRecord) {
+      if (playing && shouldRecord !== false) return;
+      const value = Number(index);
+      if (!Number.isInteger(value) || value < 0 || value >= notes.length) return;
+      ensureAudio();
+      tone(notes[value], 0, .62, timbres[timbre], .038);
+      flash(value);
+      markPlayed(game);
+      status.textContent = `${pads[value]} 响起了`;
+      if (shouldRecord !== false && recording) {
+        if (!startedAt) startedAt = performance.now();
+        song.push(value);
+        setScore(`音符 ${song.length}`);
+        setBest(game, song.length);
+        syncControls();
+      }
+    }
+    function playSequence(sequence, label) {
+      if (!sequence.length) return;
+      clearTimers();
+      playing = true;
+      status.textContent = label;
+      syncControls();
+      sequence.forEach((index, step) => {
+        timers.push(window.setTimeout(() => playNote(index, false), step * 350));
+      });
+      timers.push(window.setTimeout(() => { playing = false; status.textContent = "轮到你啦，试着弹一段吧"; syncControls(); }, sequence.length * 350 + 180));
+    }
+    function stopRecording() {
+      recording = false;
+      startedAt = 0;
+      status.textContent = song.length ? `已录下 ${song.length} 个音符` : "还没有音符，试试轻点琴键";
+      syncControls();
+    }
+    keys.forEach((key) => key.addEventListener("click", () => playNote(key.dataset.keyIndex, true)));
+    mount.querySelector("#keyboardDemo").addEventListener("click", () => {
+      const melodies = [[0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0], [0, 1, 2, 3, 4, 5, 6, 7], [0, 2, 4, 7, 4, 2, 0]];
+      playSequence(melodies[demoIndex % melodies.length].filter((value) => value < pads.length), ["小星星示范", "上行阶梯示范", "彩虹问候示范"][demoIndex % 3]);
+      demoIndex += 1;
+    });
+    recordButton.addEventListener("click", () => {
+      if (playing) return;
+      if (recording) { stopRecording(); return; }
+      song = [];
+      startedAt = 0;
+      recording = true;
+      status.textContent = "录音中，弹一段自己的旋律";
+      setScore("音符 0");
+      syncControls();
+    });
+    playButton.addEventListener("click", () => playSequence(song, "回放你的旋律"));
+    clearButton.addEventListener("click", () => { song = []; startedAt = 0; status.textContent = "录音已清空，随时可以重新开始"; setScore("音符 0"); syncControls(); });
+    toneButton.addEventListener("click", () => { timbre = (timbre + 1) % timbres.length; syncControls(); playSound("glow"); });
+    function onKeydown(event) {
+      const key = String(event.key || "").toLowerCase();
+      const index = keyMap.findIndex((value) => String(value).toLowerCase() === key);
+      if (index < 0) return;
+      event.preventDefault();
+      playNote(index, true);
+    }
+    window.addEventListener("keydown", onKeydown);
+    syncControls();
+    return () => { clearTimers(); window.removeEventListener("keydown", onKeydown); };
+  }
+
   function renderSoundBoard(mount, game) {
+    if (game.mode === "keyboard") return renderElectronicKeyboard(mount, game);
     const config = game.config || {};
     const pads = config.pads || ["低音", "中音", "高音", "回声"];
     const notes = config.notes || [261.63, 329.63, 392, 523.25];
