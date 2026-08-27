@@ -209,7 +209,8 @@
   }
 
   function renderHub() {
-    document.title = "轻松游乐场 · 40款儿童趣味小游戏";
+    const count = CATALOG.length;
+    document.title = `轻松游乐场 · ${count}款儿童趣味小游戏`;
     document.body.dataset.page = "hub";
     appRoot.innerHTML = `
       <header class="site-header">
@@ -218,7 +219,7 @@
       </header>
       <main class="hub-main">
         <section class="hub-intro">
-          <div class="intro-copy"><p class="eyebrow">8-10岁 · 40款无压力小游戏</p><h1>轻松游乐场</h1><p>从自由创作到路线规划、节奏记忆和小小策略挑战。没有失败惩罚，选一个喜欢的世界，玩几分钟就好。</p></div>
+          <div class="intro-copy"><p class="eyebrow">8-10岁 · ${count}款无压力小游戏</p><h1>轻松游乐场</h1><p>从自由创作到路线规划、节奏记忆、方块建造和小小策略挑战。没有失败惩罚，选一个喜欢的世界，玩几分钟就好。</p></div>
           <div class="intro-scene" aria-hidden="true"><i class="scene-sun"></i><i class="scene-cloud one"></i><i class="scene-cloud two"></i><b class="scene-plane">➤</b><i class="scene-hill"></i><i class="scene-dots"></i></div>
         </section>
         <section class="catalog-section" aria-labelledby="relaxTitle">
@@ -266,7 +267,16 @@
       "rhythm-drums": renderRhythm,
       "paper-plane": renderPaperPlane
     };
-    const engine = engines[game.id] || (game.engine === "mini-arcade" ? renderMiniArcade : null);
+    const specialEngines = {
+      "block-world": renderBlockWorld,
+      "creative-canvas": renderCreativeCanvas,
+      "sound-board": renderSoundBoard,
+      physics: renderPhysics,
+      "sorting-board": renderSortingBoard,
+      nature: renderNature,
+      puzzle: renderPuzzle
+    };
+    const engine = engines[game.id] || specialEngines[game.engine] || (game.engine === "mini-arcade" ? renderMiniArcade : null);
     if (!engine) throw new Error(`Missing game engine: ${game.id}`);
     cleanupGame = engine(mount, game) || null;
   }
@@ -904,6 +914,314 @@
     function draw(time){const ctx=surface.context;paintMiniBackground(ctx,width,height,config.scene,time);const y=height*.68;ctx.fillStyle="rgba(255,255,255,.75)";ctx.fillRect(width*.1,y-13,width*.8,26);ctx.fillStyle="#59a56d";ctx.fillRect(width*.42,y-13,width*.16,26);ctx.strokeStyle="#182127";ctx.lineWidth=3;ctx.strokeRect(width*.1,y-13,width*.8,26);const x=width*(.1+position(time)*.8);ctx.fillStyle="#f1ca51";ctx.strokeStyle="#182127";ctx.beginPath();ctx.arc(x,y,14,0,TAU);ctx.fill();ctx.stroke();ctx.font=`${54+score*2}px sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(config.object||"◆",width*.5,height*.38);for(let i=0;i<score;i+=1){ctx.fillStyle=["#ef795d","#67c3bd","#7397d8","#d47caf"][i%4];ctx.beginPath();ctx.arc(width*.5+(i%2?8:-8),height*.5-i*9,8,0,TAU);ctx.fill();}}
     function act(){markPlayed(game);const now=performance.now();const value=position(now);if(Math.abs(value-.5)<=.1){score+=1;phase+=.7;speed+=.00008;playSound("success");setScore(`成功 ${Math.min(score,goal)} / ${goal}`);setBest(game,score);if(score===goal)canvasMessage("完美完成，还可以继续挑战手感！");}else{playSound("soft");canvasMessage(value<.5?"稍微早了一点":"稍微晚了一点");}}
     mount.querySelector("#balanceAction").addEventListener("click",act);canvas.addEventListener("pointerdown",event=>{event.preventDefault();act();});const stop=loopFrame(draw);return()=>{stop();surface.cleanup();};
+  }
+
+  function renderBlockWorld(mount, game) {
+    const config = game.config || {};
+    const palette = config.palette || ["草地", "木头", "石头", "玻璃", "灯", "小屋"];
+    const icons = config.icons || ["🌱", "🪵", "🪨", "▣", "✦", "🏠"];
+    const columns = 10;
+    const rows = 7;
+    const cells = Array(columns * rows).fill(null);
+    let selected = 0;
+    let erase = false;
+    let rotation = 0;
+    const task = config.task ? `<p class="block-task"><strong>任务卡</strong>${escapeHtml(config.task)}</p>` : "";
+    mount.innerHTML = `<div class="game-panel block-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">已建 0 / ${config.goal || 18}</span></div><div class="block-stage"><div class="block-world-grid" style="--block-columns:${columns};--block-rows:${rows}">${cells.map((_, index) => `<button type="button" class="block-cell" data-block-cell="${index}" aria-label="空白方块"></button>`).join("")}</div>${task}<p class="mini-status" id="blockStatus">选择方块，轻点网格开始建造</p></div><div class="toolbar block-toolbar"><div class="piece-palette">${palette.map((label, index) => `<button type="button" class="piece-button block-piece ${index === 0 ? "active" : ""}" data-block-piece="${index}" aria-label="选择${escapeHtml(label)}"><span>${escapeHtml(icons[index] || "■")}</span><small>${escapeHtml(label)}</small></button>`).join("")}</div><div class="tool-group"><button type="button" class="tool-icon ${erase ? "active" : ""}" id="blockErase" aria-label="擦除方块" title="擦除方块">⌫</button><button type="button" class="tool-icon" id="blockRotate" aria-label="旋转建筑视角" title="旋转建筑视角">↻</button><button type="button" class="tool-icon" id="blockClear" aria-label="清空建造" title="清空建造">×</button></div></div></div>`;
+    const grid = mount.querySelector(".block-world-grid");
+    const status = mount.querySelector("#blockStatus");
+    const update = () => {
+      grid.querySelectorAll("[data-block-cell]").forEach((button, index) => {
+        const value = cells[index];
+        button.textContent = value === null ? "" : icons[value.type] || "■";
+        button.dataset.type = value === null ? "" : String(value.type);
+        button.classList.toggle("filled", value !== null);
+        button.style.setProperty("--block-rotation", `${value ? value.rotation : 0}deg`);
+        button.setAttribute("aria-label", value === null ? "空白方块" : `已放置${palette[value.type] || "方块"}`);
+      });
+      const built = cells.filter(Boolean).length;
+      setScore(`已建 ${built} / ${config.goal || 18}`);
+      if (built >= (config.goal || 18)) {
+        status.textContent = "任务完成！还可以继续添加细节。";
+        canvasMessage("建造完成，欢迎继续设计！");
+      }
+    };
+    grid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-block-cell]");
+      if (!button) return;
+      markPlayed(game);
+      const index = Number(button.dataset.blockCell);
+      if (erase) cells[index] = null;
+      else cells[index] = { type: selected, rotation };
+      playSound(erase ? "soft" : "glow");
+      update();
+    });
+    mount.querySelectorAll("[data-block-piece]").forEach((button) => button.addEventListener("click", () => {
+      selected = Number(button.dataset.blockPiece); erase = false;
+      mount.querySelectorAll("[data-block-piece]").forEach((item) => item.classList.toggle("active", item === button));
+      mount.querySelector("#blockErase").classList.remove("active");
+    }));
+    mount.querySelector("#blockErase").addEventListener("click", () => {
+      erase = !erase;
+      mount.querySelector("#blockErase").classList.toggle("active", erase);
+    });
+    mount.querySelector("#blockRotate").addEventListener("click", () => { rotation = (rotation + 90) % 360; grid.classList.toggle("rotated"); playSound("tap"); });
+    mount.querySelector("#blockClear").addEventListener("click", () => { cells.fill(null); update(); status.textContent = "网格清空了，重新设计吧"; });
+    update();
+    return null;
+  }
+
+  function renderCreativeCanvas(mount, game) {
+    const config = game.config || {};
+    const kind = config.kind || game.mode || "doodle";
+    const colors = config.colors || ["#ef795d", "#f1ca51", "#67c3bd", "#7397d8", "#b878a8"];
+    let color = colors[0];
+    let surface;
+    let current = null;
+    const strokes = [];
+    const cells = kind === "pixel" || kind === "mosaic" ? Array((config.size || 6) ** 2).fill(null) : null;
+    const placements = [];
+    const stickers = config.stickers || ["✦", "●", "☁", "🌿", "🐱"];
+    const paletteMarkup = kind === "stickers"
+      ? `<div class="piece-palette">${stickers.map((item, index) => `<button type="button" class="piece-button ${index === 0 ? "active" : ""}" data-sticker="${index}" aria-label="选择贴纸${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}</div>`
+      : `<div class="palette" aria-label="选择颜色">${colors.map((value, index) => `<button type="button" class="swatch ${index === 0 ? "active" : ""}" data-creative-color="${value}" style="background:${value}" aria-label="选择第${index + 1}种颜色"></button>`).join("")}</div>`;
+    const gridHint = cells ? `<span class="game-hint">点方格填色</span>` : `<span class="game-hint">按住画布自由创作</span>`;
+    const toolbar = `${paletteMarkup}${gridHint}<div class="tool-group"><button type="button" class="tool-icon" id="creativeUndo" aria-label="撤销" title="撤销">↶</button><button type="button" class="tool-icon" id="creativeClear" aria-label="清空" title="清空">×</button><button type="button" class="tool-icon" id="creativeSave" aria-label="保存图片" title="保存图片">↓</button></div>`;
+    const canvas = canvasPanel(mount, game, cells ? `完成 0 / ${cells.length}` : "自由创作", toolbar);
+    let selectedSticker = stickers[0];
+    surface = configureCanvas(canvas, () => { if (surface) draw(); });
+    function draw() {
+      const { width, height } = surface.size();
+      const ctx = surface.context;
+      ctx.clearRect(0, 0, width, height);
+      if (kind === "cloud") {
+        const sky = ctx.createLinearGradient(0, 0, 0, height); sky.addColorStop(0, "#8ec8e0"); sky.addColorStop(1, "#eaf6f7"); ctx.fillStyle = sky;
+      } else if (kind === "doodle") { ctx.fillStyle = "#171f3d"; }
+      else { ctx.fillStyle = "#fffdf5"; }
+      ctx.fillRect(0, 0, width, height);
+      if (kind === "doodle") {
+        ctx.fillStyle = "rgba(255,255,255,.7)"; for (let i = 0; i < 54; i += 1) { ctx.beginPath(); ctx.arc((i * 71 + 24) % width, (i * 43 + 18) % height, i % 3 ? 1.5 : 2.5, 0, TAU); ctx.fill(); }
+      }
+      if (cells) {
+        const size = config.size || 6; const cell = Math.min(width, height) * .82 / size; const ox = (width - cell * size) / 2; const oy = (height - cell * size) / 2;
+        for (let i = 0; i < size * size; i += 1) { const x = i % size; const y = Math.floor(i / size); ctx.fillStyle = cells[i] || "#f4f0e8"; ctx.fillRect(ox + x * cell, oy + y * cell, cell - 2, cell - 2); ctx.strokeStyle = "rgba(24,33,39,.25)"; ctx.strokeRect(ox + x * cell, oy + y * cell, cell - 2, cell - 2); }
+      }
+      if (kind === "symmetry") { ctx.strokeStyle = "rgba(24,33,39,.18)"; ctx.setLineDash([6, 8]); ctx.beginPath(); ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height); ctx.stroke(); ctx.setLineDash([]); }
+      strokes.forEach((stroke) => {
+        if (!stroke.length) return;
+        ctx.save(); ctx.lineWidth = kind === "clay" ? 28 : kind === "watercolor" ? 24 : 7; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = stroke[0].color; ctx.globalAlpha = kind === "watercolor" ? .2 : .9;
+        ctx.beginPath(); stroke.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke();
+        if (kind === "symmetry") { ctx.translate(width, 0); ctx.scale(-1, 1); ctx.beginPath(); stroke.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y)); ctx.stroke(); }
+        if (kind === "watercolor") { stroke.forEach((point) => { ctx.fillStyle = stroke[0].color; ctx.beginPath(); ctx.arc(point.x, point.y, 20, 0, TAU); ctx.fill(); }); }
+        ctx.restore();
+      });
+      placements.forEach((item) => { ctx.font = `${item.size}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(item.sticker, item.x, item.y); });
+    }
+    function point(event) { return surface.point(event); }
+    function setGrid(event) {
+      const size = config.size || 6; const { width, height } = surface.size(); const cell = Math.min(width, height) * .82 / size; const p = point(event); const ox = (width - cell * size) / 2; const oy = (height - cell * size) / 2; const x = Math.floor((p.x - ox) / cell); const y = Math.floor((p.y - oy) / cell); if (x < 0 || x >= size || y < 0 || y >= size) return; cells[y * size + x] = color; markPlayed(game); playSound("glow"); setScore(`完成 ${cells.filter(Boolean).length} / ${cells.length}`); if (cells.every(Boolean)) canvasMessage("填色完成，作品亮起来了！"); draw();
+    }
+    canvas.addEventListener("pointerdown", (event) => { event.preventDefault(); canvas.setPointerCapture(event.pointerId); if (cells) { setGrid(event); return; } markPlayed(game); const p = point(event); if (kind === "stickers") { placements.push({ x: p.x, y: p.y, sticker: selectedSticker, size: randInt(34, 66) }); playSound("glow"); draw(); return; } current = [{ x: p.x, y: p.y, color }]; strokes.push(current); draw(); });
+    canvas.addEventListener("pointermove", (event) => { if (!current || cells) return; event.preventDefault(); const p = point(event); current.push({ x: p.x, y: p.y, color }); draw(); });
+    const stop = () => { current = null; setBest(game, strokes.length + placements.length); };
+    canvas.addEventListener("pointerup", stop); canvas.addEventListener("pointercancel", stop);
+    mount.querySelectorAll("[data-creative-color]").forEach((button) => button.addEventListener("click", () => { color = button.dataset.creativeColor; mount.querySelectorAll("[data-creative-color]").forEach((item) => item.classList.toggle("active", item === button)); }));
+    mount.querySelectorAll("[data-sticker]").forEach((button) => button.addEventListener("click", () => { selectedSticker = stickers[Number(button.dataset.sticker)]; mount.querySelectorAll("[data-sticker]").forEach((item) => item.classList.toggle("active", item === button)); }));
+    mount.querySelector("#creativeUndo").addEventListener("click", () => { strokes.pop(); placements.pop(); draw(); });
+    mount.querySelector("#creativeClear").addEventListener("click", () => { strokes.length = 0; placements.length = 0; if (cells) cells.fill(null); setScore(cells ? `完成 0 / ${cells.length}` : "自由创作"); draw(); });
+    mount.querySelector("#creativeSave").addEventListener("click", () => downloadCanvas(canvas, game.title));
+    draw(); return surface.cleanup;
+  }
+
+  function renderSoundBoard(mount, game) {
+    const config = game.config || {};
+    const pads = config.pads || ["低音", "中音", "高音", "回声"];
+    const notes = config.notes || [261.63, 329.63, 392, 523.25];
+    const colors = config.colors || ["#d9583b", "#087e8b", "#2764ad", "#b64378"];
+    let count = 0;
+    mount.innerHTML = `<div class="game-panel sound-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">声音 0</span></div><div class="sound-stage"><div class="sound-scene" id="soundScene"><div class="sound-orbits" aria-hidden="true"></div><p id="soundStatus">轻点一个声音开始</p></div><div class="sound-pad-grid">${pads.map((label, index) => `<button type="button" class="sound-pad" data-sound-pad="${index}" style="--sound-color:${colors[index % colors.length]}" aria-label="播放${escapeHtml(label)}"><span>${escapeHtml(label)}</span><i aria-hidden="true"></i></button>`).join("")}</div></div><div class="toolbar mini-toolbar"><button type="button" class="action-button secondary" id="soundClear">重新开始</button></div></div>`;
+    const scene = mount.querySelector("#soundScene");
+    mount.querySelectorAll("[data-sound-pad]").forEach((button) => button.addEventListener("click", () => {
+      const index = Number(button.dataset.soundPad); markPlayed(game); ensureAudio(); tone(notes[index % notes.length], 0, .34, index % 2 ? "sine" : "triangle", .035); playSound("glow"); count += 1; setScore(`声音 ${count}`); button.classList.add("active"); window.setTimeout(() => button.classList.remove("active"), 420); scene.classList.remove("sound-pulse"); void scene.offsetWidth; scene.classList.add("sound-pulse"); scene.querySelector("p").textContent = `${pads[index]}响起了`; setBest(game, count);
+    }));
+    mount.querySelector("#soundClear").addEventListener("click", () => { count = 0; setScore("声音 0"); scene.querySelector("p").textContent = "轻点一个声音开始"; });
+    return null;
+  }
+
+  function renderPhysics(mount, game) {
+    const config = game.config || {};
+    const kind = config.kind || game.mode || "bubbles";
+    const colors = config.colors || ["#ef795d", "#f1ca51", "#67c3bd", "#7397d8"];
+    const canvas = canvasPanel(mount, game, "互动 0", `<span class="game-hint">触摸画面试试看</span><button type="button" class="action-button secondary" id="physicsClear">重新开始</button>`);
+    let surface; let width = 1; let height = 1; let count = 0; let pointer = null; let objects = [];
+    const reset = () => {
+      objects = [];
+      if (kind === "bubbles") objects = Array.from({ length: 36 }, (_, index) => ({ x: 35 + (index % 9) * 55, y: 38 + Math.floor(index / 9) * 55, r: 21, color: colors[index % colors.length], popped: false }));
+      if (kind === "leaves") objects = Array.from({ length: 28 }, (_, index) => ({ x: rand(35, width - 35), y: rand(55, height - 35), r: rand(11, 18), color: colors[index % colors.length], vx: 0, vy: 0 }));
+      if (kind === "ripple") objects = [];
+      count = 0; setScore("互动 0"); draw();
+    };
+    surface = configureCanvas(canvas, (w, h) => { width = w; height = h; });
+    function draw(time) {
+      const ctx = surface.context; ctx.fillStyle = kind === "bubbles" || kind === "ripple" ? "#cfeef0" : kind === "sand" ? "#f0dfbf" : kind === "snow" ? "#eaf4fb" : "#f7eade"; ctx.fillRect(0, 0, width, height);
+      if (kind === "bubbles") objects.forEach((o) => { if (o.popped) return; ctx.fillStyle = o.color; ctx.globalAlpha = .32; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = o.color; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.beginPath(); ctx.arc(o.x - 6, o.y - 7, 4, 0, TAU); ctx.fill(); });
+      if (kind === "leaves") objects.forEach((o) => { o.x += o.vx; o.y += o.vy; ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(Math.sin((time || 0) * .001 + o.x) * .3); ctx.fillStyle = o.color; ctx.beginPath(); ctx.ellipse(0, 0, o.r, o.r * .55, 0, 0, TAU); ctx.fill(); ctx.restore(); });
+      if (kind === "ripple") { objects.forEach((o) => { o.radius += 1.8; o.alpha -= .009; ctx.strokeStyle = `rgba(39,119,139,${Math.max(0, o.alpha)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x, o.y, o.radius, 0, TAU); ctx.stroke(); }); objects = objects.filter((o) => o.alpha > 0); }
+      if (kind === "domino") { objects.forEach((o) => { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rotation || 0); ctx.fillStyle = o.color; ctx.fillRect(-6, -25, 12, 50); ctx.restore(); }); }
+      if (kind === "sand") { objects.forEach((o) => { o.vy = Math.min(4, o.vy + .08); o.y += o.vy; if (o.y > height - 10) { o.y = height - 10; o.vy *= -.18; } ctx.fillStyle = o.color; ctx.fillRect(o.x, o.y, 4, 4); }); }
+      if (kind === "fluid" || kind === "slime") { objects.forEach((o) => { o.x += (o.tx - o.x) * .025; o.y += (o.ty - o.y) * .025; ctx.fillStyle = o.color; ctx.globalAlpha = kind === "fluid" ? .35 : .75; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }); }
+      if (kind === "jelly") { const p = pointer || { x: width / 2, y: height / 2 }; ctx.fillStyle = colors[0]; ctx.globalAlpha = .76; ctx.beginPath(); ctx.ellipse(p.x, p.y, 90 + Math.sin((time || 0) * .004) * 8, 68 - Math.sin((time || 0) * .004) * 7, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = colors[1] || "#182127"; ctx.lineWidth = 4; ctx.stroke(); }
+      if (kind === "snow") { const p = pointer || { x: width / 2, y: height / 2 }; ctx.fillStyle = "#fff"; ctx.strokeStyle = "#557fa2"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y, 28 + Math.min(55, count * 2), 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#557fa2"; ctx.font = "18px sans-serif"; ctx.textAlign = "center"; ctx.fillText("❄", p.x, p.y + 6); }
+      if (pointer && kind !== "jelly" && kind !== "snow") { ctx.fillStyle = "rgba(255,255,255,.65)"; ctx.beginPath(); ctx.arc(pointer.x, pointer.y, 9, 0, TAU); ctx.fill(); }
+    }
+    function interact(event) {
+      event.preventDefault(); pointer = surface.point(event); markPlayed(game);
+      if (kind === "bubbles") { const hit = objects.find((o) => !o.popped && distance(o, pointer) < o.r + 8); if (hit) { hit.popped = true; count += 1; playSound("pop"); } }
+      else if (kind === "ripple") { objects.push({ x: pointer.x, y: pointer.y, radius: 2, alpha: 1 }); count += 1; playSound("splash"); }
+      else if (kind === "domino") { objects.push({ x: pointer.x, y: pointer.y, color: colors[objects.length % colors.length], rotation: rand(-.12, .12) }); count += 1; playSound("tap"); }
+      else if (kind === "sand") { for (let i = 0; i < 16; i += 1) objects.push({ x: pointer.x + rand(-12, 12), y: pointer.y + rand(-9, 9), vy: 0, color: colors[randInt(0, colors.length - 1)] }); count += 1; playSound("grain"); }
+      else if (kind === "fluid" || kind === "slime") { objects.push({ x: pointer.x, y: pointer.y, tx: pointer.x + rand(-100, 100), ty: pointer.y + rand(-80, 80), r: rand(12, 28), color: colors[count % colors.length] }); count += 1; playSound("glow"); }
+      else if (kind === "leaves") { objects.forEach((o) => { const d = distance(o, pointer); if (d < 70) { o.vx += (o.x - pointer.x) * .012; o.vy += (o.y - pointer.y) * .012; } }); count += 1; playSound("soft"); }
+      else if (kind === "jelly" || kind === "snow") { count += 1; playSound("soft"); }
+      setScore(`互动 ${count}`); setBest(game, count);
+    }
+    canvas.addEventListener("pointerdown", interact); canvas.addEventListener("pointermove", (event) => { if (pointer) interact(event); }); canvas.addEventListener("pointerup", () => { pointer = null; }); canvas.addEventListener("pointercancel", () => { pointer = null; });
+    mount.querySelector("#physicsClear").addEventListener("click", reset);
+    const stop = loopFrame(draw); reset(); return () => { stop(); surface.cleanup(); };
+  }
+
+  function renderSortingBoard(mount, game) {
+    const config = game.config || {};
+    const kind = config.kind || game.mode || "bins";
+    const icons = config.icons || ["✦", "●", "▲", "■"];
+    let score = 0;
+    let selected = null;
+    let first = null;
+    const initialItems = kind === "puzzle" ? Array.from({ length: (config.size || 3) ** 2 }, (_, index) => icons[index % icons.length]) : (config.items || icons);
+    let cards = initialItems.map((label, index) => ({ label, index, icon: icons[index % icons.length], matched: false }));
+    if (kind === "memory") cards = cards.sort(() => Math.random() - .5);
+    if (kind === "sequence" || kind === "puzzle") cards = cards.sort(() => Math.random() - .5);
+    function shell(body, toolbar) {
+      mount.innerHTML = `<div class="game-panel sorting-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">完成 0</span></div><div class="sorting-stage">${body}</div><div class="toolbar mini-toolbar">${toolbar || `<button type="button" class="action-button secondary" id="sortReset">重新开始</button>`}</div></div>`;
+      mount.querySelector("#sortReset")?.addEventListener("click", reset);
+    }
+    function reset() {
+      score = 0; selected = null; first = null; cards = initialItems.map((label, index) => ({ label, index, icon: icons[index % icons.length], matched: false })); if (kind === "memory" || kind === "sequence" || kind === "puzzle") cards.sort(() => Math.random() - .5); draw();
+    }
+    function updateScore() { setScore(`完成 ${score}`); setBest(game, score); }
+    function draw() {
+      if (kind === "memory") {
+        shell(`<div class="sort-memory-grid">${cards.map((card, index) => `<button type="button" class="sort-memory-card ${card.matched || card.open ? "open" : ""}" data-sort-card="${index}">${card.open || card.matched ? escapeHtml(card.icon) : "?"}</button>`).join("")}</div><p class="mini-status" id="sortStatus">一次翻开两张卡片，找到相同图案</p>`);
+        mount.querySelectorAll("[data-sort-card]").forEach((button) => button.addEventListener("click", () => memoryPick(Number(button.dataset.sortCard))));
+      } else if (kind === "sequence") {
+        shell(`<p class="sort-lead">把彩笔排成彩虹顺序</p><div class="sort-sequence">${cards.map((card, index) => `<button type="button" class="sort-sequence-card" data-sort-card="${index}" style="--sort-color:${config.colors?.[card.index] || "#d9e5e5"}">${escapeHtml(card.label)}</button>`).join("")}</div><p class="mini-status">先点一支，再点另一支交换位置</p>`);
+        mount.querySelectorAll("[data-sort-card]").forEach((button) => button.addEventListener("click", () => sequencePick(Number(button.dataset.sortCard))));
+      } else if (kind === "puzzle") {
+        const size = config.size || 3;
+        shell(`<p class="sort-lead">交换碎片，拼回完整图案</p><div class="sort-puzzle-grid" style="--sort-size:${size}">${cards.map((card, index) => `<button type="button" data-sort-card="${index}">${escapeHtml(card.icon)}</button>`).join("")}</div><p class="mini-status">点击两个碎片交换位置</p>`);
+        mount.querySelectorAll("[data-sort-card]").forEach((button) => button.addEventListener("click", () => sequencePick(Number(button.dataset.sortCard))));
+      } else {
+        const bins = config.bins || ["盒子一", "盒子二", "盒子三", "盒子四"];
+        shell(`<p class="sort-lead">先选物品，再选它的归属位置</p><div class="sort-items">${cards.map((card, index) => `<button type="button" class="sort-item ${card.matched ? "done" : ""}" data-sort-item="${index}" ${card.matched ? "disabled" : ""}>${escapeHtml(card.icon)}<small>${escapeHtml(card.label)}</small></button>`).join("")}</div><div class="sort-bins">${bins.map((bin, index) => `<button type="button" class="sort-bin" data-sort-bin="${index}">${escapeHtml(icons[index] || "▣")}<small>${escapeHtml(bin)}</small></button>`).join("")}</div><p class="mini-status" id="sortStatus">轻点物品开始整理</p>`);
+        mount.querySelectorAll("[data-sort-item]").forEach((button) => button.addEventListener("click", () => { selected = Number(button.dataset.sortItem); mount.querySelectorAll("[data-sort-item]").forEach((item) => item.classList.toggle("selected", item === button)); mount.querySelector("#sortStatus").textContent = "现在选择它应该去的盒子"; }));
+        mount.querySelectorAll("[data-sort-bin]").forEach((button) => button.addEventListener("click", () => binPick(Number(button.dataset.sortBin))));
+      }
+      updateScore();
+    }
+    function binPick(bin) {
+      if (selected === null) return;
+      const card = cards[selected]; const expected = card.index % (config.bins || icons).length;
+      if (bin === expected) { card.matched = true; score += 1; playSound("catch"); if (cards.every((item) => item.matched)) canvasMessage("全部整理完成，真是收纳高手！"); }
+      else { playSound("soft"); mount.querySelector("#sortStatus").textContent = "这个位置不太合适，再想一想"; }
+      selected = null; draw();
+    }
+    function memoryPick(index) {
+      const card = cards[index]; if (card.matched || card.open || first === index) return;
+      card.open = true; playSound("tap");
+      if (first === null) { first = index; draw(); return; }
+      const other = cards[first];
+      if (other.icon === card.icon) { card.matched = true; other.matched = true; score += 1; playSound("success"); first = null; draw(); }
+      else { const old = first; first = null; draw(); window.setTimeout(() => { cards[old].open = false; card.open = false; draw(); }, 650); }
+    }
+    function sequencePick(index) {
+      if (first === null) { first = index; mount.querySelectorAll("[data-sort-card]")[index]?.classList.add("selected"); return; }
+      if (first === index) return;
+      [cards[first], cards[index]] = [cards[index], cards[first]]; first = null; score = cards.reduce((total, card, position) => total + ((kind === "sequence" ? (config.target || ["红", "橙", "黄", "绿", "蓝", "紫"])[position] === card.label : card.index === position) ? 1 : 0), 0); playSound("glow"); draw(); if (score === cards.length) { playSound("success"); canvasMessage("拼图完成，顺序漂亮！"); }
+    }
+    draw(); return null;
+  }
+
+  function renderNature(mount, game) {
+    const config = game.config || {};
+    const kind = config.kind || game.mode || "garden";
+    const icons = config.icons || ["🌱", "🌼", "✦", "🐠"];
+    const colors = config.colors || ["#67c3bd", "#7397d8", "#d47caf", "#f1ca51"];
+    const canvas = canvasPanel(mount, game, "发现 0", `<span class="game-hint">轻点或拖动画面探索</span><button type="button" class="action-button secondary" id="natureReset">重新开始</button>`);
+    let surface; let width = 1; let height = 1; let count = 0; let season = 0; let stage = 0; const items = []; let pointerPosition = null;
+    surface = configureCanvas(canvas, (w, h) => { width = w; height = h; });
+    function draw(time) {
+      const ctx = surface.context;
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      if (kind === "aurora") { gradient.addColorStop(0, "#142544"); gradient.addColorStop(1, "#3f6d7a"); }
+      else if (kind === "undersea") { gradient.addColorStop(0, "#8ad7dc"); gradient.addColorStop(1, "#176b7a"); }
+      else if (kind === "island") { gradient.addColorStop(0, "#9ed9e0"); gradient.addColorStop(1, "#2c8990"); }
+      else { gradient.addColorStop(0, "#e9f6e7"); gradient.addColorStop(1, "#9ac28b"); }
+      ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
+      if (kind === "seasons") { const seasonIcons = icons; ctx.fillStyle = "#6b4a35"; ctx.fillRect(width * .46, height * .4, 26, height * .38); ctx.strokeStyle = ["#e87d87", "#55a969", "#d27b48", "#b9d4e8"][season]; ctx.lineWidth = 24; ctx.lineCap = "round"; [[.35,.36],[.62,.34],[.28,.48],[.72,.5]].forEach(([x,y]) => { ctx.beginPath(); ctx.moveTo(width * .48, height * .48); ctx.lineTo(width * x, height * y); ctx.stroke(); }); ctx.font = "72px sans-serif"; ctx.textAlign = "center"; ctx.fillText(seasonIcons[season], width * .5, height * .28); }
+      if (kind === "aurora") { for (let i = 0; i < 4; i += 1) { ctx.strokeStyle = colors[i % colors.length]; ctx.globalAlpha = .55; ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(-20, height * (.28 + i * .1)); ctx.bezierCurveTo(width * .25, height * (.12 + i * .1), width * .68, height * (.46 - i * .04), width + 20, height * (.25 + i * .12)); ctx.stroke(); } ctx.globalAlpha = 1; ctx.fillStyle = "#f1ca51"; for (let i = 0; i < 35; i += 1) { ctx.beginPath(); ctx.arc((i * 71 + 20) % width, (i * 43 + 18) % (height * .6), i % 3 ? 1.5 : 2.5, 0, TAU); ctx.fill(); } }
+      if (kind === "garden" || kind === "seed") { ctx.fillStyle = "#7b5a3c"; ctx.fillRect(width * .1, height * .7, width * .8, height * .2); ctx.font = "46px sans-serif"; ctx.textAlign = "center"; ctx.fillText(icons[Math.min(stage, icons.length - 1)], width * .5, height * .62); items.forEach((item) => { ctx.font = `${item.size}px sans-serif`; ctx.fillText(item.icon, item.x, item.y); }); }
+      if (kind === "undersea") { ctx.font = "42px sans-serif"; items.forEach((item) => { item.x += Math.sin((time || 0) * .001 + item.phase) * .4; ctx.fillText(item.icon, item.x, item.y); }); }
+      if (kind === "island") { ctx.fillStyle = "#e6c174"; ctx.beginPath(); ctx.ellipse(width * .5, height * .62, width * .36, height * .2, 0, 0, TAU); ctx.fill(); ctx.font = "40px sans-serif"; items.forEach((item) => ctx.fillText(item.icon, item.x, item.y)); }
+      if (kind === "butterfly") { ctx.font = "42px sans-serif"; items.forEach((item) => { item.x += Math.sin((time || 0) * .002 + item.phase) * .6; item.y += Math.cos((time || 0) * .001 + item.phase) * .3; ctx.fillText(item.icon, item.x, item.y); }); }
+      if (pointerPosition) { ctx.fillStyle = "rgba(255,255,255,.65)"; ctx.beginPath(); ctx.arc(pointerPosition.x, pointerPosition.y, 10, 0, TAU); ctx.fill(); }
+    }
+    function interact(event) { event.preventDefault(); pointerPosition = surface.point(event); markPlayed(game); if (kind === "seasons") { season = (season + 1) % 4; playSound("glow"); } else if (kind === "seed") { stage = Math.min(5, stage + 1); playSound("catch"); } else { const icon = kind === "undersea" ? pick(icons) : kind === "butterfly" ? pick(icons.slice(0, 3)) : pick(icons); items.push({ x: pointerPosition.x, y: pointerPosition.y, icon, size: randInt(30, 56), phase: rand(0, TAU) }); count += 1; playSound("glow"); } setScore(`发现 ${count}`); setBest(game, count + stage); if ((kind === "seed" && stage === 5) || (kind !== "seed" && count >= 8)) canvasMessage("这片自然角落被你照顾得很好！"); draw(); }
+    canvas.addEventListener("pointerdown", interact); canvas.addEventListener("pointermove", (event) => { if (kind === "undersea" || kind === "butterfly") interact(event); }); canvas.addEventListener("pointerup", () => { pointerPosition = null; }); canvas.addEventListener("pointercancel", () => { pointerPosition = null; });
+    mount.querySelector("#natureReset").addEventListener("click", () => { count = 0; stage = 0; season = 0; items.length = 0; setScore("发现 0"); draw(); });
+    const stop = loopFrame(draw); draw(); return () => { stop(); surface.cleanup(); };
+  }
+
+  function renderPuzzle(mount, game) {
+    const config = game.config || {};
+    const kind = config.kind || game.mode || "pipes";
+    const size = config.size || 5;
+    let board = [];
+    let score = 0;
+    let first = null;
+    let targetPath = [];
+    const symbols = kind === "pipes" ? ["╋", "┳", "┫", "┻"] : kind === "gears" ? ["⚙", "◉", "✦", "◌"] : ["·", "·", "·", "·"];
+    function reset() {
+      score = 0; first = null; board = Array.from({ length: size * size }, (_, index) => ({ value: randInt(0, symbols.length - 1), fixed: false }));
+      if (kind === "gradient") board = Array.from({ length: size }, (_, index) => ({ value: size - index - 1 }));
+      if (kind === "merge") board = Array.from({ length: size * size }, () => ({ value: Math.random() > .7 ? 2 : 0 }));
+      targetPath = makeGridRoute(size, Math.max(5, size + 2));
+      draw();
+    }
+    function draw() {
+      const extra = kind === "ball" ? `<button type="button" class="action-button" id="puzzleStart">开始滚动</button>` : `<button type="button" class="action-button secondary" id="puzzleReset">重新开始</button>`;
+      mount.innerHTML = `<div class="game-panel puzzle-panel"><div class="panel-top">${instructionMarkup(game)}<span class="score-pill" id="gameScore">进度 0</span></div><div class="puzzle-stage"><div class="puzzle-grid puzzle-${escapeHtml(kind)}" style="--puzzle-size:${size}">${board.map((cell, index) => `<button type="button" data-puzzle-cell="${index}" class="${cell.value ? "active" : ""}">${renderPuzzleCell(cell, index)}</button>`).join("")}</div><p class="mini-status" id="puzzleStatus">${puzzleHint()}</p></div><div class="toolbar mini-toolbar">${extra}</div></div>`;
+      mount.querySelectorAll("[data-puzzle-cell]").forEach((button) => button.addEventListener("click", () => puzzlePick(Number(button.dataset.puzzleCell))));
+      mount.querySelector("#puzzleReset")?.addEventListener("click", reset); mount.querySelector("#puzzleStart")?.addEventListener("click", () => { score += 1; setScore(`进度 ${score}`); playSound("success"); canvasMessage("小球沿着路线滚进洞里了！"); });
+      setScore(`进度 ${score}`);
+    }
+    function puzzleHint() { return ({ pipes: "轻点管道旋转，连通水源和花园", oneline: "从起点开始依次点亮路线", gradient: "点击两个色块交换位置", merge: "点击相同数字方块进行合成", path: "点相邻格铺出一条路", gears: "点齿轮切换方向，接通动力", ball: "调整挡板后点击开始滚动" })[kind] || "轻点方格开始"; }
+    function renderPuzzleCell(cell, index) {
+      if (kind === "oneline") return targetPath.includes(index) ? (targetPath.indexOf(index) === 0 ? "起" : targetPath.indexOf(index) === targetPath.length - 1 ? "终" : "·") : "";
+      if (kind === "gradient") { const hue = 12 + cell.value * 28; return `<span class="gradient-chip" style="--gradient-h:${hue}"></span>`; }
+      if (kind === "merge") return cell.value ? String(cell.value) : "";
+      if (kind === "path") return targetPath.includes(index) ? "·" : "";
+      if (kind === "ball") return index === 0 ? "●" : index === size * size - 1 ? "◎" : cell.value ? "╱" : "";
+      return symbols[cell.value % symbols.length];
+    }
+    function puzzlePick(index) {
+      markPlayed(game); const cell = board[index];
+      if (kind === "pipes" || kind === "gears" || kind === "ball") { cell.value = (cell.value + 1) % symbols.length; score += 1; playSound("tap"); }
+      else if (kind === "oneline" || kind === "path") { const expected = targetPath[score % targetPath.length]; if (index === expected) { score += 1; playSound("catch"); } else playSound("soft"); }
+      else if (kind === "gradient") { if (first === null) first = index; else { [board[first], board[index]] = [board[index], board[first]]; first = null; score += 1; playSound("glow"); } }
+      else if (kind === "merge") { const neighbor = [index - 1, index + 1, index - size, index + size].find((other) => other >= 0 && other < board.length && board[other].value && board[other].value === cell.value); if (neighbor !== undefined) { board[index].value *= 2; board[neighbor].value = 0; score += board[index].value; playSound("success"); } }
+      setScore(`进度 ${score}`); draw(); if (score >= (kind === "oneline" || kind === "path" ? targetPath.length : kind === "gradient" ? size : 8)) canvasMessage("挑战完成，还可以继续探索！");
+    }
+    reset(); return null;
   }
 
   function renderCurrent() {
