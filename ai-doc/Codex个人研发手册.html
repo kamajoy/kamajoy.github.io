@@ -1,0 +1,3269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="面向个人研发的 Codex、ChatGPT Work、Superpowers 和 OpenSpec 离线实战手册。">
+  <link rel="icon" href="data:,">
+  <title>Codex 个人研发手册</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('codex-handbook-theme');
+        var theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      } catch (error) {
+        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+    }());
+  </script>
+  <style>
+    :root {
+      --bg: #f7f8f6;
+      --surface: #ffffff;
+      --surface-muted: #f0f2ef;
+      --text: #18201c;
+      --muted: #59645d;
+      --line: #d7ddd8;
+      --line-strong: #b9c2bb;
+      --accent: #176b4d;
+      --accent-soft: #dff2e9;
+      --accent-ink: #0a5038;
+      --danger: #a33a34;
+      --danger-soft: #fae8e6;
+      --warning: #8a5b12;
+      --warning-soft: #fff1d4;
+      --code-bg: #202722;
+      --code-text: #f2f7f3;
+      --mark: #ffe08a;
+      --focus: #1d73d1;
+      --shadow: 0 8px 28px rgba(19, 35, 27, 0.10);
+      --header-height: 68px;
+      --sidebar-width: 286px;
+      --radius: 6px;
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #121713;
+      --surface: #1a211c;
+      --surface-muted: #222a24;
+      --text: #eef4ef;
+      --muted: #aab7ae;
+      --line: #354139;
+      --line-strong: #526158;
+      --accent: #6ed1a5;
+      --accent-soft: #153c2d;
+      --accent-ink: #9ce3c2;
+      --danger: #ffaaa3;
+      --danger-soft: #4b2524;
+      --warning: #f2c36f;
+      --warning-soft: #473616;
+      --code-bg: #0d120f;
+      --code-text: #eef7f0;
+      --mark: #745d16;
+      --focus: #76b7ff;
+      --shadow: 0 10px 32px rgba(0, 0, 0, 0.32);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-height) + 20px); }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.72;
+      letter-spacing: 0;
+    }
+    body.nav-open { overflow: hidden; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { text-decoration-thickness: 2px; }
+    button, input { font: inherit; letter-spacing: 0; }
+    button { color: inherit; }
+    code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    .skip-link {
+      position: fixed;
+      z-index: 1000;
+      left: 12px;
+      top: 8px;
+      transform: translateY(-160%);
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--focus);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    .topbar {
+      position: sticky;
+      z-index: 40;
+      top: 0;
+      min-height: var(--header-height);
+      display: grid;
+      grid-template-columns: minmax(210px, 0.72fr) minmax(300px, 1.3fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 20px;
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 10px;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--accent-soft);
+      color: var(--accent-ink);
+      font-weight: 800;
+    }
+    .brand-copy { min-width: 0; }
+    .brand-copy strong, .brand-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .brand-copy strong { font-size: 14px; line-height: 1.3; }
+    .brand-copy span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .search-wrap { position: relative; min-width: 0; }
+    .search-wrap label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .search-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 96px 0 40px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-symbol { position: absolute; left: 14px; top: 10px; color: var(--muted); pointer-events: none; }
+    .search-shortcut { position: absolute; right: 48px; top: 10px; color: var(--muted); font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+    .clear-search {
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .clear-search:hover { background: var(--surface-muted); }
+    .top-actions { display: flex; gap: 8px; }
+    .icon-btn, .text-btn {
+      min-width: 44px;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .icon-btn:hover, .text-btn:hover { background: var(--surface-muted); }
+    .menu-btn { display: none; padding: 0; font-size: 22px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    .sidebar {
+      position: sticky;
+      top: var(--header-height);
+      align-self: start;
+      height: calc(100vh - var(--header-height));
+      padding: 20px 14px 28px 20px;
+      overflow: auto;
+      border-right: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .sidebar-title { margin: 0 6px 10px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 18px; }
+    .filter-btn {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .filter-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+    .result-count { margin: 0 6px 12px; min-height: 24px; color: var(--muted); font-size: 13px; }
+    .checklist-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 6px 20px; color: var(--muted); font-size: 12px; }
+    .checklist-tools .text-btn { height: 36px; font-size: 12px; }
+    .checklist-tools .text-btn:disabled { opacity: 0.55; cursor: default; }
+    .toc { margin: 0; padding: 0; list-style: none; }
+    .toc li { margin: 1px 0; }
+    .toc a {
+      display: block;
+      padding: 6px 8px;
+      color: var(--muted);
+      border-left: 2px solid transparent;
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1.42;
+    }
+    .toc a[data-level="3"] { padding-left: 17px; }
+    .toc a[data-level="4"], .toc a[data-level="5"] { padding-left: 28px; font-size: 12px; }
+    .toc a:hover { color: var(--text); background: var(--surface-muted); }
+    .toc a[aria-current="location"] { color: var(--accent-ink); border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+
+    .content { min-width: 0; width: 100%; max-width: 1040px; padding: 28px clamp(24px, 4vw, 64px) 100px; }
+    .intro {
+      padding: 4px 0 26px;
+      border-bottom: 2px solid var(--line-strong);
+    }
+    .eyebrow { margin: 0 0 6px; color: var(--accent); font-size: 13px; font-weight: 800; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 900px; font-size: clamp(28px, 3.4vw, 42px); line-height: 1.14; letter-spacing: 0; }
+    .purpose { max-width: 840px; margin: 12px 0 18px; color: var(--muted); font-size: 17px; }
+    .boundary-strip {
+      padding: 12px 14px;
+      border-left: 4px solid var(--danger);
+      background: var(--danger-soft);
+      color: var(--text);
+      font-weight: 650;
+    }
+    .boundary-strip strong { color: var(--danger); }
+    .quick-flow { margin-top: 18px; }
+    .quick-flow h2 { margin: 0 0 10px; font-size: 15px; }
+    .flow-steps { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--line); }
+    .flow-step { padding: 12px 14px; border-right: 1px solid var(--line); }
+    .flow-step:last-child { border-right: 0; }
+    .flow-step strong { display: block; color: var(--accent-ink); font-size: 14px; }
+    .flow-step span { color: var(--muted); font-size: 13px; }
+    .intro-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .intro-links a { padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-decoration: none; font-size: 13px; }
+
+    .source-group { padding-top: 34px; }
+    .chapter { min-width: 0; padding: 28px 0; border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--header-height) + 18px); }
+    .source-intro { padding-top: 10px; border-bottom: 2px solid var(--line-strong); }
+    .source-kicker { margin: 0 0 4px; color: var(--accent); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .source-note { color: var(--muted); font-size: 14px; }
+    h2, h3, h4, h5, h6 { scroll-margin-top: calc(var(--header-height) + 18px); letter-spacing: 0; }
+    h2 { margin: 10px 0 12px; font-size: 28px; line-height: 1.28; }
+    h3 { margin: 2px 0 16px; font-size: 22px; line-height: 1.35; }
+    h4 { margin: 28px 0 10px; font-size: 17px; line-height: 1.4; }
+    h5, h6 { margin: 22px 0 8px; font-size: 15px; }
+    p { margin: 10px 0; }
+    ul, ol { margin: 10px 0; padding-left: 24px; }
+    li { margin: 5px 0; }
+    .task-item { display: flex; align-items: flex-start; gap: 8px; list-style: none; margin-left: -22px; }
+    .task-item input { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 5px; accent-color: var(--accent); }
+    .task-item label { min-width: 0; cursor: pointer; }
+    .task-item input:checked + label { color: var(--muted); }
+    blockquote { margin: 14px 0; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text); }
+    blockquote p { margin: 4px 0; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+    :not(pre) > code { padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-muted); color: var(--text); font-size: 0.9em; overflow-wrap: anywhere; }
+
+    .table-scroll { max-width: 100%; margin: 16px 0; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { min-width: 130px; padding: 10px 12px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th:last-child, td:last-child { border-right: 0; }
+    tbody tr:last-child td { border-bottom: 0; }
+    th { background: var(--surface-muted); color: var(--text); font-weight: 750; }
+
+    .code-block { position: relative; max-width: 100%; margin: 14px 0; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; background: var(--code-bg); }
+    .code-toolbar { display: flex; align-items: center; justify-content: space-between; min-height: 38px; padding: 0 6px 0 13px; border-bottom: 1px solid rgba(255,255,255,0.15); color: #bdc9c0; font-size: 12px; }
+    .copy-btn { min-width: 58px; height: 30px; border: 1px solid rgba(255,255,255,0.24); border-radius: 4px; background: rgba(255,255,255,0.08); color: #f3f7f4; cursor: pointer; }
+    .copy-btn:hover { background: rgba(255,255,255,0.16); }
+    pre { max-width: 100%; margin: 0; padding: 16px; overflow: auto; color: var(--code-text); font-size: 13px; line-height: 1.62; tab-size: 2; }
+    pre code { color: inherit; white-space: pre; }
+    .prose-code pre, .prose-code pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    .template-details { margin-top: 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .template-details summary { min-height: 44px; padding: 9px 13px; cursor: pointer; color: var(--accent-ink); font-weight: 700; }
+    .template-details[open] summary { border-bottom: 1px solid var(--line); }
+    .template-content { padding: 8px 14px 14px; }
+
+    mark { padding: 0 1px; background: var(--mark); color: var(--text); border-radius: 2px; }
+    .no-results { padding: 28px 0; border-bottom: 1px solid var(--line); }
+    .no-results h2 { font-size: 22px; }
+    .manifest { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .manifest ul { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0; list-style: none; }
+    .manifest li { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .manifest strong, .manifest span { display: block; }
+    .manifest span { margin-top: 3px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .footer { padding: 34px 0 8px; color: var(--muted); font-size: 13px; }
+    .backdrop { display: none; }
+
+    @media (max-width: 960px) {
+      :root { --header-height: 112px; }
+      .topbar { grid-template-columns: auto 1fr auto; gap: 8px; padding: 8px 12px; }
+      .brand-copy span { display: none; }
+      .search-wrap { grid-column: 1 / -1; grid-row: 2; }
+      .top-actions { grid-column: 3; grid-row: 1; }
+      .menu-btn { display: inline-block; grid-column: 1; grid-row: 1; }
+      .brand { grid-column: 2; grid-row: 1; }
+      .print-btn { display: none; }
+      .layout { display: block; }
+      .sidebar {
+        position: fixed;
+        z-index: 60;
+        inset: var(--header-height) auto 0 0;
+        width: min(88vw, 340px);
+        height: calc(100vh - var(--header-height));
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      body.nav-open .sidebar { transform: translateX(0); }
+      .backdrop { position: fixed; z-index: 50; inset: var(--header-height) 0 0; background: rgba(0,0,0,0.42); }
+      body.nav-open .backdrop { display: block; }
+      .content { max-width: 820px; margin: 0 auto; padding: 20px 20px 80px; }
+      .manifest ul { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      :root { --header-height: 108px; }
+      .topbar { min-height: var(--header-height); }
+      .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
+      .brand-copy strong { font-size: 13px; }
+      .theme-label { display: none; }
+      .theme-btn { padding: 0; }
+      .content { padding: 14px 16px 64px; }
+      .intro { padding-top: 0; padding-bottom: 18px; }
+      .eyebrow { margin-bottom: 2px; font-size: 11px; }
+      h1 { font-size: 27px; }
+      .purpose { margin: 7px 0 10px; font-size: 14px; line-height: 1.5; }
+      .boundary-strip { padding: 8px 10px; font-size: 12px; line-height: 1.45; }
+      .quick-flow { margin-top: 10px; }
+      .quick-flow h2 { margin-bottom: 5px; font-size: 13px; }
+      .flow-steps { grid-template-columns: 1fr; }
+      .flow-step { padding: 6px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .flow-step:last-child { border-bottom: 0; }
+      .flow-step strong { display: inline; font-size: 12px; }
+      .flow-step span { font-size: 12px; }
+      .intro-links { display: none; }
+      .source-group { padding-top: 24px; }
+      .chapter { padding: 22px 0; }
+      h2 { font-size: 24px; }
+      h3 { font-size: 20px; }
+      h4 { font-size: 16px; }
+      p, li { font-size: 15px; }
+      .search-shortcut { display: none; }
+      .search-input { padding-right: 44px; }
+      th, td { min-width: 150px; }
+      pre { font-size: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      :root, :root[data-theme="dark"] {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-muted: #f3f3f3;
+        --text: #111111;
+        --muted: #454545;
+        --line: #cfcfcf;
+        --line-strong: #999999;
+        --accent: #165b42;
+        --accent-soft: #edf5f1;
+        --accent-ink: #124632;
+        --danger: #8d2f2a;
+        --danger-soft: #f8eded;
+        --code-bg: #f4f4f4;
+        --code-text: #111111;
+      }
+      html { scroll-padding-top: 0; }
+      body { background: #fff; color: #111; font-size: 10pt; line-height: 1.55; }
+      .topbar, .sidebar, .backdrop, .skip-link, .copy-btn, .filters, .no-results, .top-actions, .intro-links, .code-toolbar, .template-details summary { display: none !important; }
+      .layout { display: block; max-width: none; }
+      .content { max-width: none; padding: 0; }
+      .chapter, .source-group, .source-chapter { display: block !important; }
+      .source-group { break-before: page; }
+      .source-intro { break-inside: avoid; }
+      .intro { padding-top: 0; }
+      .template-details, .template-content { display: block !important; border: 0; padding: 0; }
+      details:not([open]) > *:not(summary) { display: block !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 18pt; break-after: avoid; }
+      h3 { font-size: 14pt; break-after: avoid; }
+      h4 { font-size: 11pt; break-after: avoid; }
+      p, li, blockquote { orphans: 3; widows: 3; }
+      .chapter { break-inside: auto; padding: 18px 0; }
+      .table-scroll { overflow: visible; break-inside: avoid; }
+      table { font-size: 8.5pt; table-layout: fixed; }
+      th, td { min-width: 0; overflow-wrap: anywhere; }
+      .code-block { break-inside: avoid; background: #f4f4f4; border-color: #999; }
+      pre { overflow: visible; color: #111; }
+      pre, pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+      mark { padding: 0; background: transparent; color: inherit; }
+      a { color: #111; text-decoration: underline; }
+      .manifest li { break-inside: avoid; }
+      .footer { break-before: auto; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+  <header class="topbar">
+    <button class="icon-btn menu-btn" id="menuToggle" type="button" aria-label="打开章节目录" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <div class="brand" aria-label="Codex 个人研发手册">
+      <span class="brand-mark" aria-hidden="true">C</span>
+      <span class="brand-copy"><strong>个人研发手册</strong><span>Codex · Work · Superpowers · OpenSpec</span></span>
+    </div>
+    <div class="search-wrap" role="search">
+      <label for="handbookSearch">搜索手册全文</label>
+      <span class="search-symbol" aria-hidden="true">⌕</span>
+      <input class="search-input" id="handbookSearch" type="search" autocomplete="off" placeholder="搜索流程、场景、命令或提示词">
+      <span class="search-shortcut" aria-hidden="true">⌘ K</span>
+      <button class="clear-search" id="clearSearch" type="button" aria-label="清除搜索" hidden>×</button>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn theme-btn" id="themeToggle" type="button" aria-label="切换到深色模式" aria-pressed="false"><span aria-hidden="true">◐</span> <span class="theme-label">主题</span></button>
+      <button class="text-btn print-btn" id="printButton" type="button">打印</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="手册导航">
+      <p class="sidebar-title">内容范围</p>
+      <div class="filters" role="group" aria-label="按文档筛选">
+        <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="filter-btn" type="button" data-filter="overview" aria-pressed="false">快速开始</button>
+        <button class="filter-btn" type="button" data-filter="tutorial" aria-pressed="false">完整教程</button>
+        <button class="filter-btn" type="button" data-filter="checklist" aria-pressed="false">检查清单</button>
+        <button class="filter-btn" type="button" data-filter="templates" aria-pressed="false">提示词</button>
+      </div>
+      <p class="result-count" id="resultCount" role="status" aria-live="polite">正在建立索引…</p>
+      <div class="checklist-tools" data-ui="true">
+        <span id="checklistProgress" role="status" aria-live="polite">检查清单</span>
+        <button class="text-btn" id="resetChecklist" type="button">重置全部勾选</button>
+        <span>浏览器允许时在本地保存；勾选仅作提醒，不替代验收证据。</span>
+      </div>
+      <p class="sidebar-title">章节目录</p>
+      <nav aria-label="章节目录"><ul class="toc" id="toc"></ul></nav>
+    </aside>
+    <button class="backdrop" id="backdrop" type="button" aria-label="关闭章节目录"></button>
+
+    <main class="content" id="main-content" tabindex="-1">
+      <section class="intro chapter" id="quick-start" data-search-item data-source="overview" data-title="快速开始">
+        <p class="eyebrow">离线手册 · 版本 2026-10-20</p>
+        <h1 id="handbook-title" data-nav-heading>Codex 个人研发全流程实战手册</h1>
+        <p class="purpose">面向已具备开发环境、希望规范使用 AI 研发工具的新手。覆盖 PRD 梳理、方案确认、Go/MySQL 实现、新功能、Bug 修复、重构和性能优化；这里的“全流程”止于本地研发交付。</p>
+        <div class="boundary-strip"><strong>始终禁止：</strong>git commit / push / 任何 PR 变更、部署发布、连接或写入数据库、发送或修改外部系统。即使确认，也只允许生成 SQL、请求示例、风险说明和人工操作步骤。</div>
+        <div class="quick-flow" aria-labelledby="quick-flow-title">
+          <h2 id="quick-flow-title">三阶段：从只读分析到本地交付</h2>
+          <div class="flow-steps">
+            <div class="flow-step"><strong>1. 只读澄清</strong><span>核对目标、依据、范围、非目标和验收条件</span></div>
+            <div class="flow-step"><strong>2. 确认方案与计划</strong><span>默认分别确认设计方案、实施计划</span></div>
+            <div class="flow-step"><strong>3. 本地实施交付</strong><span>实施、测试、Review，报告证据与剩余风险</span></div>
+          </div>
+          <p class="source-note">默认保留两次确认；只有满足教程中的全部轻量任务条件，且你明确合并批准时，才合并方案与计划确认。</p>
+        </div>
+        <div class="intro-links" aria-label="快速跳转">
+          <a href="#source-tutorial-title">读完整教程</a>
+          <a href="#source-checklist-title">打开检查清单</a>
+          <a href="#source-templates-title">复制提示词</a>
+        </div>
+      </section>
+
+      <section class="chapter" id="quick-decision" data-search-item data-source="overview" data-title="30 秒选择入口">
+        <h2 id="quick-decision-title" data-nav-heading>30 秒选择入口</h2>
+        <div class="table-scroll" tabindex="0" aria-label="工具选择表">
+          <table>
+            <thead><tr><th scope="col">你现在要做什么</th><th scope="col">从哪里开始</th><th scope="col">默认能力</th></tr></thead>
+            <tbody>
+              <tr><td>读 PRD、设计稿、Word、Excel、飞书</td><td>ChatGPT Work</td><td>文档读取与交叉核对</td></tr>
+              <tr><td>分析真实代码、实现、测试、Review</td><td>对应仓库的 Codex 任务</td><td>Superpowers 自动选择工作流</td></tr>
+              <tr><td>复杂跨仓、公共契约、长期规格</td><td>Codex 项目</td><td>Superpowers + OpenSpec</td></tr>
+              <tr><td>满足教程全部轻量条件的小任务</td><td>Codex</td><td>你明确合并批准后，可合并方案与计划确认</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote><p>记法：文档和决策用 Work；代码和验证用 Codex；方法默认交给 Superpowers；确实需要长期保存规格时再加 OpenSpec。</p></blockquote>
+      </section>
+
+      <section class="chapter" id="quick-dialogue" data-search-item data-source="overview" data-title="三阶段标准对话">
+        <h2 id="quick-dialogue-title" data-nav-heading>三阶段标准对话</h2>
+        <div class="code-block"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制三阶段标准对话">复制</button></div><pre><code>阶段一：只读分析需求和现有实现，区分事实、推测、冲突和缺失；一次只问我一个关键问题，不修改文件。
+
+阶段二：使用 brainstorming 给出 2-3 个方案，等待我确认设计方案；方案确认后输出实施计划，再次等待我确认。只有满足教程全部轻量任务条件且我明确合并批准时，才合并这两次确认。
+
+阶段三：方案与计划获批后，在约定范围内实施，运行相关测试并 Review 最终差异，交付本地修改与验证报告。禁止 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及改变外部系统。运行测试前先排除外部副作用。</code></pre></div>
+      </section>
+
+      <section class="chapter" id="source-manifest" data-search-item data-source="overview" data-title="内容来源">
+        <h2 id="source-manifest-title" data-nav-heading>内容来源</h2>
+        <p>网页正文由以下三份 Markdown 在生成时完整转换并内嵌。网页运行不依赖这些文件，也不会发起网络请求。</p>
+        <div class="manifest"><ul><li><strong>完整教程</strong><span>Codex个人研发全流程实战教程.md</span></li><li><strong>快速清单</strong><span>Codex个人研发快速操作清单.md</span></li><li><strong>提示词模板</strong><span>Codex个人研发提示词模板.md</span></li></ul></div>
+      </section>
+
+      <section class="no-results" id="noResults" hidden>
+        <h2>没有找到匹配内容</h2>
+        <p>请缩短关键词、切换到“全部”，或清除搜索后重试。</p>
+        <button class="text-btn" id="resetSearch" type="button">清除搜索和筛选</button>
+      </section>
+
+      <section class="source-group" id="source-tutorial" aria-labelledby="source-tutorial-title">
+<section class="chapter source-intro" data-search-item data-source="tutorial" data-title="Codex 个人研发全流程实战教程"><p class="source-kicker">完整教程 · Markdown 原文完整收录</p><h2 id="source-tutorial-title" data-nav-heading>Codex 个人研发全流程实战教程</h2><p class="source-note">系统理解角色分工、研发流程和工程边界 · 来源文件：<code>Codex个人研发全流程实战教程.md</code></p>
+<blockquote>
+<p>适用对象：已有开发环境和基础编码能力、刚开始使用 AI 研发工具的个人开发者<br>主要环境：macOS、Codex 桌面客户端、VS Code、Codex CLI、Go、MySQL、HTTP/RPC、多代码仓库<br>文档版本：2026-10-20<br>配套文件：<a href="#source-checklist-title">快速操作清单</a> · <a href="#source-templates-title">提示词模板</a> · <a href="#handbook-title">HTML 手册</a></p>
+</blockquote>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="0. 先记住这四句话"><h3 id="tutorial-0-先记住这四句话" data-nav-heading>0. 先记住这四句话</h3>
+<ol>
+<li><strong>默认先确认需求与方案，再确认实施计划，之后才让 AI 改代码和测试。</strong></li>
+<li><strong>最终产物主要是文档时用 ChatGPT Work，主要是代码时用 Codex。</strong></li>
+<li><strong>让 AI 提供实际运行的命令与结果，不接受“应该没问题”。</strong></li>
+<li><strong>本教程默认不 commit、不 push、不进行任何 PR 变更、不部署、不发布、不连接或写入任何数据库、不改变外部系统。</strong></li>
+</ol>
+<p>本教程的“全流程”指本地需求分析、设计、实施、验证与交接。部署、数据库执行、真实环境联调与上线验收由人工完成；本地通过不等于生产验收通过。</p>
+<p>如果时间很少，每次任务按下面三个阶段操作。一个阶段可以有多条消息，不是限定只聊三轮：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>第一阶段：只读分析需求和现有实现，先复述已读规则及来源；区分事实、推测、冲突和缺失，一次只问我一个关键问题，不修改文件。
+
+第二阶段：先输出方案、影响范围、风险和非目标，等我确认；再输出实施与验证计划，再等我确认。草案只展示在对话中。
+
+第三阶段（方案和计划均已批准后）：在约定文件范围内实施，先排除会连接数据库或外部系统的测试，再运行相关本地验证并 Review 最终差异。禁止 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及改变外部系统。</code></pre></div>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="1. 这套方法解决什么问题"><h3 id="tutorial-1-这套方法解决什么问题" data-nav-heading>1. 这套方法解决什么问题</h3>
+<p>你的主要工作可以归纳为六类：</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>工作</th>
+<th>真正目标</th>
+<th>常见风险</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PRD 梳理</td>
+<td>把业务意图变成无歧义、可验收的需求</td>
+<td>AI 自行补规则、设计稿与文字冲突</td>
+</tr>
+<tr>
+<td>方案讨论</td>
+<td>找到满足需求且适合现有系统的实现方式</td>
+<td>未读代码就设计、忽略兼容性</td>
+</tr>
+<tr>
+<td>新功能</td>
+<td>在既有工程中完成可验证的行为变化</td>
+<td>改动扩散、缺少异常流程与测试</td>
+</tr>
+<tr>
+<td>Bug 修复</td>
+<td>用证据定位根因并防止复发</td>
+<td>根据报错猜修、用重试掩盖问题</td>
+</tr>
+<tr>
+<td>重构</td>
+<td>改善结构但保持业务行为不变</td>
+<td>把重构变成改需求或大改接口</td>
+</tr>
+<tr>
+<td>性能优化</td>
+<td>在相同条件下获得可量化改善</td>
+<td>没有基线、只凭代码观感优化</td>
+</tr>
+</tbody></table>
+</div>
+<p>最佳协作方式不是一句“帮我完成”，而是明确设置四个关口：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>需求关口 -&gt; 方案关口 -&gt; 修改关口 -&gt; 验收关口</code></pre></div>
+<ul>
+<li><strong>需求关口</strong>：目标、边界、非目标、验收条件是否明确。</li>
+<li><strong>方案关口</strong>：是否基于真实代码和数据，而不是通用经验。</li>
+<li><strong>修改关口</strong>：你明确确认后才允许编辑文件。</li>
+<li><strong>验收关口</strong>：只有实际检查通过，才能说完成。</li>
+</ul>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="2. ChatGPT Work、Codex 和插件分别做什么"><h3 id="tutorial-2-chatgpt-work-codex-和插件分别做什么" data-nav-heading>2. ChatGPT Work、Codex 和插件分别做什么</h3>
+<h4 id="tutorial-2-1-chatgpt-work" data-nav-heading>2.1 ChatGPT Work</h4>
+<p>适合以资料和决策为中心的任务：</p>
+<ul>
+<li>阅读 PRD、飞书文档、Word、Excel、设计稿和历史方案；</li>
+<li>对比多份资料，识别冲突和遗漏；</li>
+<li>组织业务流程、边界、验收标准和待确认项；</li>
+<li>讨论方案的业务取舍；</li>
+<li>生成给 Codex 使用的“AI 执行版需求”。</li>
+</ul>
+<p>**不要让 Work 仅凭 PRD 猜测真实项目结构。**涉及现有代码、依赖、测试命令和改动范围时，应切到对应仓库的 Codex 任务。</p>
+<h4 id="tutorial-2-2-codex" data-nav-heading>2.2 Codex</h4>
+<p>适合以真实工程和可执行验证为中心的任务：</p>
+<ul>
+<li>阅读代码、配置、SQL、调用链和 Git 差异；</li>
+<li>根据已确认 PRD 设计技术方案；</li>
+<li>新增功能、修复 Bug、重构和性能优化；</li>
+<li>运行 <code>gofmt</code>、<code>go vet</code>、<code>go test</code>、构建和本地验证；</li>
+<li>Review 未提交修改，报告风险和未验证项。</li>
+</ul>
+<h4 id="tutorial-2-3-superpowers" data-nav-heading>2.3 Superpowers</h4>
+<p>Superpowers 不是模型，也不是一个终端命令。它是一组研发工作流 Skills，重点约束 AI <strong>先理解、再设计、再实现、最后验证</strong>。</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>Skill</th>
+<th>什么时候用</th>
+<th>你会看到什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>brainstorming</code></td>
+<td>新功能、复杂需求、架构调整</td>
+<td>AI 一次问一个问题，形成设计并等你确认</td>
+</tr>
+<tr>
+<td><code>writing-plans</code></td>
+<td>已确认的复杂多步骤方案</td>
+<td>可执行的任务拆分、文件和验证步骤</td>
+</tr>
+<tr>
+<td><code>test-driven-development</code></td>
+<td>新行为或 Bug 修复</td>
+<td>先失败测试，再最小实现，再回归</td>
+</tr>
+<tr>
+<td><code>systematic-debugging</code></td>
+<td>Bug、测试失败、异常性能</td>
+<td>复现、证据、根因、验证假设</td>
+</tr>
+<tr>
+<td><code>verification-before-completion</code></td>
+<td>准备宣布实现完成时</td>
+<td>对本次实现执行相关验证；只做交接/整理时引用已有证据并标明范围与时间</td>
+</tr>
+<tr>
+<td><code>requesting-code-review</code></td>
+<td>功能完成、本地交付前</td>
+<td>按严重度检查 Bug、回归和缺失测试</td>
+</tr>
+<tr>
+<td><code>using-git-worktrees</code></td>
+<td>确实需要隔离并行工作时</td>
+<td>创建独立工作目录；本教程仍禁止 commit</td>
+</tr>
+</tbody></table>
+</div>
+<p>Superpowers 安装后通常会根据任务自动选择 Skill。你也可以在 Codex 中明确输入：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>@Superpowers 使用 brainstorming 梳理这个需求。一次只问我一个问题，方案确认前不要改代码。</code></pre></div>
+<p>如果客户端支持 Skill 选择，也可以从 Skills 列表选择对应 Skill。不同客户端的入口可能变化，<strong>不要把 <code>@Superpowers</code> 当作 shell 命令执行</strong>。</p>
+<h4 id="tutorial-2-4-openspec" data-nav-heading>2.4 OpenSpec</h4>
+<p>OpenSpec 用于把长期、复杂或跨服务变更保存成项目内的规格、提案和任务记录。它不是所有任务的必需品。</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>情况</th>
+<th>是否使用 OpenSpec</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单文件小修、小范围 Bug</td>
+<td>不用，Superpowers 足够</td>
+</tr>
+<tr>
+<td>一般新功能，1 个仓库，需求已稳定</td>
+<td>通常不用；先用 Superpowers</td>
+</tr>
+<tr>
+<td>跨多个服务或涉及公共接口/数据契约</td>
+<td>建议使用</td>
+</tr>
+<tr>
+<td>多阶段交付、多人协作、需要长期追踪规格</td>
+<td>建议使用</td>
+</tr>
+<tr>
+<td>需求仍很模糊</td>
+<td>先用 <code>brainstorming</code>，不要急着建 OpenSpec 提案</td>
+</tr>
+</tbody></table>
+</div>
+<ul>
+<li><strong>Superpowers 管方法</strong>：如何提问、设计、调试、测试和 Review。</li>
+<li><strong>OpenSpec 管持久化规格</strong>：决定了什么、改什么、有哪些任务、完成到哪里。</li>
+</ul>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="3. 你的默认安全与执行边界"><h3 id="tutorial-3-你的默认安全与执行边界" data-nav-heading>3. 你的默认安全与执行边界</h3>
+<h4 id="tutorial-3-1-允许-ai-自主执行" data-nav-heading>3.1 允许 AI 自主执行</h4>
+<ul>
+<li>阅读本地需求、代码、日志、配置示例和 Git 状态；</li>
+<li>使用 <code>rg</code>、<code>git status</code>、<code>git diff</code> 阅读源文件与现有差异；</li>
+<li>在方案与实施计划均获批准后编辑约定范围内的本地代码和测试；</li>
+<li>运行不连接任何数据库或外部系统的格式化、静态检查、单元测试和本地构建；</li>
+<li>在对话中生成 SQL、接口请求示例和操作步骤；保存为文件需有准确路径和文档写入授权，不执行数据库或外部写入；</li>
+<li>Review 本地差异并生成交付报告。</li>
+</ul>
+<h4 id="tutorial-3-2-必须先问你" data-nav-heading>3.2 必须先问你</h4>
+<ul>
+<li>需求资料冲突，且不同选择会改变业务结果；</li>
+<li>需要新增表、公共接口、依赖或改变兼容性；</li>
+<li>需要修改范围外文件或做无关重构；</li>
+<li>需要启动会长期运行的服务，或需要下载依赖、访问内网；</li>
+<li>需要创建 Worktree、分支或改变 Git 工作区状态；</li>
+<li>测试需要访问测试环境、真实数据或外部服务；</li>
+<li>发现已有未提交修改与本次任务冲突。</li>
+</ul>
+<h4 id="tutorial-3-3-始终禁止" data-nav-heading>3.3 始终禁止</h4>
+<ul>
+<li><code>git commit</code>、<code>git push</code>，以及创建、编辑、评论、审批、合并、关闭、重开等任何 PR 变更；</li>
+<li>部署、灰度、发布或修改线上配置；</li>
+<li>连接或写入任何数据库；</li>
+<li>实际执行写数据 SQL、调用会改变外部状态的接口；</li>
+<li>把密码、Token、Cookie、生产 DSN 或敏感生产数据发送给第三方；</li>
+<li>用 <code>git reset --hard</code>、<code>git checkout --</code> 等命令覆盖你的修改；</li>
+<li>未经确认删除本地文件或本地可恢复资源；</li>
+<li>删除数据库表/数据或外部系统资源始终不得执行；即使你确认，也只能生成脚本、风险说明和人工操作步骤。</li>
+</ul>
+<blockquote>
+<p>不提交 Git 不代表不用 Git。<code>git status</code>、<code>git diff</code> 和 <code>git log</code> 是核对本地修改的重要只读工具。</p>
+</blockquote>
+<h4 id="tutorial-3-4-提示词约定与实际权限要分别落实" data-nav-heading>3.4 提示词约定与实际权限要分别落实</h4>
+<p>“不提交、不发布、不连接数据库”是你给 AI 的任务约定，不是输入后就自动启用的软件强制保护。Skill 也不能替代客户端权限和操作系统限制。使用客户端当前提供的受限工作区、网络权限和逐项审批；分析阶段选择只读能力（若有），实施阶段仅开放目标目录写入。不要为了省确认而启用跳过审批或无限制访问。权限名称以当前客户端为准。</p>
+<p>“只读分析”在本文指不修改项目源文件、不改变外部业务状态。构建或 Go 工具命令仍可能写缓存、下载模块/工具链，某些情况下改变校验文件。<code>go list</code>、<code>go test</code>、<code>go vet</code>、<code>go build</code> 都不能仅凭名称视为零副作用。先读 <code>go.mod</code> / <code>go.work</code> 和测试配置，核对本机工具链、缓存与网络需求；依赖下载未获授权时采用离线设置，缺依赖就报告，不擅自下载。<code>-mod=readonly</code> 也不是全盘只读保证。执行后核对 <code>go.mod</code>、<code>go.sum</code>、<code>go.work</code>、<code>go.work.sum</code> 和其他工作区差异。</p>
+<h4 id="tutorial-3-5-规则放哪里-换会话如何继续" data-nav-heading>3.5 规则放哪里，换会话如何继续</h4>
+<p>按三个层次管理规则，不要求创建 <code>AGENTS.md</code> 或其他新规则文件：</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>层次</th>
+<th>保存与引用方法</th>
+<th>生效检查</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>个人长期规则</td>
+<td>把模板 0 保存在自己的常用文本/本手册中，新会话粘贴；可自愿使用个人 Skill 保存通用流程</td>
+<td>AI 首轮复述不提交、不发布、不连接数据库等约定；插件安装不代表它记住了这些规则</td>
+</tr>
+<tr>
+<td>项目固定规则</td>
+<td>使用项目已有 README、开发文档、PRD/TRD、规格；新会话明确给路径及相关章节</td>
+<td>AI 先读取，列出来源、适用目录、版本和冲突；不得只说“遵守规范”</td>
+</tr>
+<tr>
+<td>单次任务要求</td>
+<td>任务卡中写目标、文件范围、非目标、验收与本轮权限</td>
+<td>AI 复述后再分析；变更超出批准范围时询问</td>
+</tr>
+</tbody></table>
+</div>
+<p>项目规则至少核对：技术栈和版本、目录职责、命名约定、公共接口/数据契约、禁止修改范围、生成文件处理、依赖新增/升级政策、验证命令与副作用。已有资料未覆盖的部分，先在对话确认；你明确授权后才更新指定的现有文档，不自动新建规则文件。</p>
+<p>Codex 支持 <code>AGENTS.md</code> 指令文件机制；若项目本来有此类文件，应读取实际适用的全局、项目及子目录规则并说明来源。本教程不要求也不创建它；“不创建”不代表忽略已经存在的规则。具体发现顺序与覆盖关系按当前官方说明/客户端提示核对，不能假定一个插件就替代了指令文件或跨会话记忆。</p>
+<p>每次新会话先复制这段，并填写实际路径：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>个人规则：不创建 AGENTS.md 等规则文件；不提交 Git、不变更 PR、不发布、不连接或写入数据库、不改变外部系统。
+项目规则来源：【已有 README/开发文档/PRD/TRD 的真实路径及章节】。
+本轮任务：【目标、范围、非目标、验收标准】；本轮只读，不修改文件、不安装依赖、不启动服务。
+请先读取规则，复述：规则内容、来源、适用目录，以及冲突/缺失项。
+不能读取的明确标为未读取；不要把示例或推测当成生效规则，也不要重复索要已经明确给出的授权。</code></pre></div>
+<p>如果 AI 没有列出实际文件来源，先要求补读；“已理解”不能证明已读取。换会话时重新引用这些路径和已确认决策，不依赖旧聊天自动延续。</p>
+<h4 id="tutorial-3-6-确认规则与文档写入权限" data-nav-heading>3.6 确认规则与文档写入权限</h4>
+<p>默认两次批准：先确认采用的方案，再确认含文件范围、测试命令、风险和停止条件的实施计划。需求澄清可以有多次问答，这不等于重复请求同一权限。已有批准仍然有效，不让 AI 每一步重新问。</p>
+<p>仅在以下条件全部满足时，可合并为一次批准：单仓库、局部且可逆、需求无歧义；不涉及公共契约、表结构、依赖、权限、安全或事务语义变化。AI 必须同时展示短方案、准确文件范围、非目标和验证计划；你回复“确认以上短方案及实施计划，允许修改列出的文件并运行列出的本地验证”后才实施。“小任务”不是按代码行数判断，条件不满足就用默认流程。</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>当前授权</th>
+<th>可以做</th>
+<th>不能据此做</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>只分析/设计/计划</td>
+<td>对话展示草案、读取指定资料</td>
+<td>保存计划、写测试、调试插桩、生成脚本文件</td>
+</tr>
+<tr>
+<td>仅保存文档草案到明确路径</td>
+<td>写入指定文档；OpenSpec 限批准的变更目录</td>
+<td>写业务代码、测试、依赖或项目规则文件；执行文档中的命令</td>
+</tr>
+<tr>
+<td>已批准方案和实施计划</td>
+<td>修改列出的代码/测试，运行已审查副作用的相关本地验证</td>
+<td>扩大需求、改范围外文件、执行本教程禁止动作</td>
+</tr>
+<tr>
+<td>只做 Review/交接/报告</td>
+<td>审查差异、整理已有证据及其时间与范围</td>
+<td>顺手修复、格式化、为了凑报告重新执行测试</td>
+</tr>
+</tbody></table>
+</div>
+<p>文档落盘可以单独授权，例如“仅将这份计划保存到【准确路径】，不授权执行计划或改代码”。如果本轮请求已明确指定准确路径并要求生成/更新该文档，这就构成相应文档写入授权，不再重复询问；文件系统沙箱可能仍需另行授予目录访问权限。Superpowers/OpenSpec 如要求自动保存到其他路径、创建指令文件或提交，必须按当前授权收窄；不能因此提前改文件。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="4. 开始任务前的 5 分钟准备"><h3 id="tutorial-4-开始任务前的-5-分钟准备" data-nav-heading>4. 开始任务前的 5 分钟准备</h3>
+<h4 id="tutorial-4-0-第一次使用-从登录到成功读取仓库" data-nav-heading>4.0 第一次使用：从登录到成功读取仓库</h4>
+<p>前提：你能在终端使用 Git、项目要求的 Go/Node 等工具；本教程不是从零安装开发环境。第一次先用无敏感内容的本地练习，暂不连接公司的数据库或服务。</p>
+<ol>
+<li>尚未安装 Codex 时，从 <a href="https://developers.openai.com/codex/">Codex 官方入口</a>进入当前平台下载/安装说明；只使用官方渠道。已安装就跳过，不要重复安装。</li>
+<li>启动客户端，按界面完成自己的账号登录；不要把登录码、API Key 或 Cookie 发到对话里。成功标志是可以创建任务、发送消息并收到回答；若报账号/权限错误，先解决登录，不把它误判为代码问题。</li>
+<li>桌面端从项目/文件夹入口选择<strong>具体仓库根目录</strong>；VS Code 用“打开文件夹”打开同一根目录；CLI 在该目录执行 <code>codex</code>。入口名称随版本变化，以当前 UI 和帮助为准。</li>
+<li>首轮只做分析，使用受限权限；只开放所需目录，网络和额外目录按需审批。不选绕过权限检查。若插件需要自动保存/commit，以你的任务边界为准。</li>
+<li>发送下面的话，核对返回的路径、现有修改、实际规则来源是否正确。这个阶段不需要 OpenSpec，也不用先装齐所有插件。</li>
+</ol>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>我第一次在此项目使用 Codex。当前只读，不改文件、不安装依赖、不启动服务。
+请确认当前目录；如果是 Git 仓库，报告 git status 的已有修改；如果不是，明确说明。
+只读取已有 README、go.mod/go.work（若存在）和适用规则，列出实际路径。
+复述生效规则和来源，不创建 AGENTS.md，不执行构建/测试或联网命令。</code></pre></div>
+<p>成功标志：AI 引用的根目录与你选择的一致，没有混入邻近仓库；规则来源可打开；原有修改未变；没有偷偷启动服务或下载依赖。看不见仓库时先纠正目录/访问权限，不继续实现。接着做第 4.5 节练习，再开始正式项目。</p>
+<h4 id="tutorial-4-1-选择正确入口" data-nav-heading>4.1 选择正确入口</h4>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>任务状态</th>
+<th>从哪里开始</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>只有 PRD、设计稿、文档，需要先理解</td>
+<td>ChatGPT Work</td>
+</tr>
+<tr>
+<td>已有明确需求，要分析或改真实代码</td>
+<td>对应项目的 Codex 任务</td>
+</tr>
+<tr>
+<td>正在 VS Code 阅读具体代码</td>
+<td>VS Code Codex 面板</td>
+</tr>
+<tr>
+<td>希望在终端快速检查、运行命令</td>
+<td>Codex CLI</td>
+</tr>
+<tr>
+<td>涉及多个仓库</td>
+<td>每个仓库单独项目/任务，主任务保存整体依赖关系</td>
+</tr>
+</tbody></table>
+</div>
+<h4 id="tutorial-4-2-准备四类信息" data-nav-heading>4.2 准备四类信息</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>目标：最终要改变什么行为。
+上下文：PRD、设计稿、接口、代码目录、日志和截图在哪里。
+约束与非目标：哪些不能变、哪些本次不做。
+完成标准：怎样客观证明完成。</code></pre></div>
+<h4 id="tutorial-4-3-检查本地状态" data-nav-heading>4.3 检查本地状态</h4>
+<p>在项目根目录执行或让 Codex 执行：</p>
+<p>先读取 <code>go.mod</code> / <code>go.work</code> 的版本要求；下面的 Go 查询使用本地工具链，版本不满足时会报错，不能顺手下载。<code>git</code> 命令仅适用于 Git 仓库。</p>
+<blockquote>
+<p>命令示例中的 <code>/path/to/...</code>、<code>path/to/...</code> 等内容是占位符，执行前必须替换为当前项目的真实路径。</p>
+</blockquote>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>pwd
+git status --short --branch
+git diff --stat
+git diff --cached --stat
+git ls-files --others --exclude-standard
+GOTOOLCHAIN=local go version
+GOTOOLCHAIN=local go env GOMOD GOWORK GOPATH GOPROXY GOPRIVATE</code></pre></div>
+<p>目的：确认仓库、识别已有修改和未跟踪文件、核对 Go 模块及私有依赖环境，避免误改或覆盖。</p>
+<h4 id="tutorial-4-4-检查插件-但不要为每个任务重复安装" data-nav-heading>4.4 检查插件，但不要为每个任务重复安装</h4>
+<p>Superpowers：</p>
+<ul>
+<li>桌面端在插件列表搜索 <code>Superpowers</code>；</li>
+<li>CLI 打开插件界面搜索，或使用本机支持的插件列表命令；</li>
+<li>在新对话说“使用 Superpowers brainstorming 梳理需求”，观察是否按一次一个问题工作。</li>
+</ul>
+<p>OpenSpec：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>openspec --version</code></pre></div>
+<p>本机在本文编写时检测到版本 <code>1.14.1</code>。只有决定在某个项目使用时，才进入项目执行：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>openspec init --tools codex</code></pre></div>
+<p><code>init</code> 会创建项目文件，先检查当前版本预计生成哪些文件并取得明确的初始化范围授权。不得创建 <code>AGENTS.md</code> 等规则文件；若该版本无法避免，先说明限制，暂不初始化，改用对话中的需求/计划。初始化后的可用入口以终端提示和当前 Codex Skills 列表为准。</p>
+<hr>
+<h4 id="tutorial-4-5-可跟做的最小练习-清理姓名两端空白" data-nav-heading>4.5 可跟做的最小练习：清理姓名两端空白</h4>
+<p>这是真实执行过的标准库练习，不是跨仓示意案例。先在你自己的空目录用编辑器保存以下两个文件，再用 Codex 打开这个目录；不要在正式仓库里做。它不需要数据库、网络、第三方依赖或 OpenSpec，也不用初始化 Git。</p>
+<p><code>go.mod</code>：</p>
+<div class="code-block" data-language="go"><div class="code-toolbar" data-ui="true"><span>go</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>module example.com/normalize-name
+
+go 1.22</code></pre></div>
+<p><code>name.go</code>（初始实现故意未完成需求）：</p>
+<div class="code-block" data-language="go"><div class="code-toolbar" data-ui="true"><span>go</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>package names
+
+func NormalizeName(s string) string {
+	return s
+}</code></pre></div>
+<p><strong>第一步：在 Codex 对话里输入</strong>：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>这是独立 Go 练习。NormalizeName 只去掉字符串首尾空白，含空格、制表符、换行与 Unicode 空白；内部空白保留，空/全空白返回空字符串。
+非目标：不改大小写，不合并内部空格，不加依赖，不改其他代码。
+先读取已有文件，在对话给出短方案、准确文件范围与测试计划，不修改文件。
+此任务满足小任务条件，可合并展示方案和计划，等我一次明确批准两者。
+实施时先写表驱动测试并确认预期失败，再做最小实现，最后测试、vet、格式检查。
+禁止联网或下载工具链。Go 命令使用 GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOFLAGS=-mod=readonly；构建缓存仅写本练习目录的 .gocache。
+不创建 AGENTS.md 等规则文件，不提交、变更 PR、发布、连接数据库或改变外部系统。</code></pre></div>
+<p><strong>第二步：检查 AI 输出</strong>。合格的合并提案应说明：仅修改 <code>name.go</code>、新增 <code>name_test.go</code>；用标准库 <code>strings.TrimSpace</code>；覆盖首尾、内部、空字符串、全空白和 Unicode 空白；先红后绿，再 <code>go vet</code> 和 <code>gofmt -l</code>。此时不应已经写文件。不是这份方案时，先修正提案再批准。</p>
+<p><strong>第三步：回复批准</strong>：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>确认上述短方案及实施计划。
+允许修改 name.go、新增 name_test.go，并把构建缓存写入本练习目录的 .gocache。
+按计划实施，报告实际 diff、失败/通过的命令和退出状态。其他文件不改，不下载依赖。</code></pre></div>
+<p><strong>第四步：核对先红后绿</strong>。下面是本轮实际运行的测试文件：</p>
+<div class="code-block" data-language="go"><div class="code-toolbar" data-ui="true"><span>go</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>package names
+
+import &quot;testing&quot;
+
+func TestNormalizeName(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{&quot;trim_edges&quot;, &quot;  李 小明  &quot;, &quot;李 小明&quot;},
+		{&quot;keep_internal_spaces&quot;, &quot;李  小明&quot;, &quot;李  小明&quot;},
+		{&quot;empty&quot;, &quot;&quot;, &quot;&quot;},
+		{&quot;all_whitespace&quot;, &quot; \t\n &quot;, &quot;&quot;},
+		{&quot;unicode_edges&quot;, &quot;\u3000Alice\u3000&quot;, &quot;Alice&quot;},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NormalizeName(tt.in); got != tt.want {
+				t.Errorf(&quot;NormalizeName(%q) = %q, want %q&quot;, tt.in, got, tt.want)
+			}
+		})
+	}
+}</code></pre></div>
+<p>在练习目录运行下面命令；把 <code>GOCACHE</code> 换成自己的<strong>绝对路径</strong>。示例实测目录为 <code>/private/tmp/codex-normalize-name-Vj8TOj</code>，Go 为 <code>go1.26.0 darwin/arm64</code>。离线设置仍允许本地缓存写入。</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off \
+  GOFLAGS=-mod=readonly \
+  GOCACHE=/private/tmp/codex-normalize-name-Vj8TOj/.gocache \
+  go test ./... -count=1</code></pre></div>
+<p>原实现的实际结果：退出状态 <code>1</code>，5 项中 <code>trim_edges</code>、<code>all_whitespace</code>、<code>unicode_edges</code> 失败。关键输出如下（节选）：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>--- FAIL: TestNormalizeName (0.00s)
+    --- FAIL: TestNormalizeName/trim_edges (0.00s)
+        name_test.go:20: NormalizeName(&quot;  李 小明  &quot;) = &quot;  李 小明  &quot;, want &quot;李 小明&quot;
+FAIL</code></pre></div>
+<p>这是预期的行为失败；若出现下载、版本或编译错误，不能算回归测试已成功复现。</p>
+<p>随后实际业务代码差异如下（测试文件为上面新增的完整内容）：</p>
+<div class="code-block" data-language="diff"><div class="code-toolbar" data-ui="true"><span>diff</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>--- name.go.before
++++ name.go
+@@ -1,5 +1,7 @@
+ package names
+ 
++import &quot;strings&quot;
++
+ func NormalizeName(s string) string {
+-	return s
++	return strings.TrimSpace(s)
+ }</code></pre></div>
+<p>同一命令再次执行，实际退出状态 <code>0</code>：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>ok  	example.com/normalize-name	0.302s</code></pre></div>
+<p>另外实际执行了：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>env GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off \
+  GOFLAGS=-mod=readonly \
+  GOCACHE=/private/tmp/codex-normalize-name-Vj8TOj/.gocache \
+  go vet ./...
+gofmt -l name.go name_test.go</code></pre></div>
+<p>两条命令均无输出、退出状态 <code>0</code>；无新增 <code>go.sum</code>。耗时因机器不同会变化，不必与示例一致。<code>gofmt -l</code> 只是检查，这里没有自动写格式。</p>
+<p><strong>第五步：验收</strong>。在文件对比里应只看到 <code>name.go</code> 的两处改变和新增测试；<code>.gocache</code> 是已授权缓存，不是业务改动。让 AI 报告“五类受测输入通过、vet 无报告、两文件格式符合 gofmt”，而不是“已达到生产标准”。它没有验证数据库、服务或线上环境。练习未初始化 Git，可用编辑器对比初始内容；在真实仓库才用 Git diff，并单独检查未跟踪测试文件。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="5. 标准研发流程：八个阶段"><h3 id="tutorial-5-标准研发流程-八个阶段" data-nav-heading>5. 标准研发流程：八个阶段</h3>
+<h4 id="tutorial-阶段-1-建立任务卡" data-nav-heading>阶段 1：建立任务卡</h4>
+<p>先在对话中提供：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>任务类型：【PRD梳理 / 新功能 / Bug / 重构 / 性能优化】
+目标：【一句话结果】
+依据：【文件、链接、代码目录、日志】
+范围：【允许涉及的仓库、模块】
+非目标：【明确本次不做什么】
+硬约束：【接口、表、兼容性、安全规则】
+完成标准：【可验证条件】
+
+本轮只分析，不修改文件。区分事实、推测、冲突、缺失和建议；一次只问我一个关键问题。</code></pre></div>
+<p>合格输出应包含：资料清单、已确认事实、冲突/缺失、影响范围和第一个关键问题。</p>
+<h4 id="tutorial-阶段-2-只读侦察真实项目" data-nav-heading>阶段 2：只读侦察真实项目</h4>
+<p>切到 Codex，对它说：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>请先只读检查当前仓库：
+1. 确认仓库状态和已有用户修改；
+2. 找到需求涉及的入口、调用链、数据模型、接口和测试；
+3. 列出事实证据，附文件路径和必要行号；
+4. 判断 PRD 与现有实现是否冲突；
+5. 不修改文件，不安装依赖，不启动服务。</code></pre></div>
+<p>AI 应先阅读本项目，而不是套用通用架构。若涉及多仓库，必须输出仓库职责和依赖方向。</p>
+<h4 id="tutorial-阶段-3-一次确认一个关键问题" data-nav-heading>阶段 3：一次确认一个关键问题</h4>
+<p>要求 AI 按影响从高到低提问：</p>
+<ol>
+<li>会改变用户行为或数据结果的问题；</li>
+<li>会改变公共接口、表结构或兼容性的问题；</li>
+<li>会改变实现范围和工期的问题；</li>
+<li>纯技术细节，能遵循现有模式的通常无需问。</li>
+</ol>
+<p>每次回答后，让 AI 复述新结论并更新“已确认/未确认”清单。不要一次收到几十个混杂问题。</p>
+<h4 id="tutorial-阶段-4-方案设计与确认" data-nav-heading>阶段 4：方案设计与确认</h4>
+<p>使用 Superpowers：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>@Superpowers 使用 brainstorming 基于已确认需求和真实代码提出 2-3 个方案。
+
+每个方案说明：
+- 数据和调用流程；
+- 修改范围；
+- 兼容性；
+- 异常与并发处理；
+- 测试方式；
+- 风险和取舍。
+
+给出推荐方案和依据。方案确认前不要修改代码。</code></pre></div>
+<p>确认时不要只回复“可以”，建议明确：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>确认采用方案 B，并补充：
+1. 保持现有 RPC 响应字段兼容；
+2. 不新增数据表；
+3. 本次不实现后台配置页面；
+4. 按方案进入实施计划，仍不要修改代码。</code></pre></div>
+<h4 id="tutorial-阶段-5-实施计划" data-nav-heading>阶段 5：实施计划</h4>
+<p>复杂任务使用当前客户端的计划入口（若提供 <code>/plan</code>），或明确指定 <code>writing-plans</code>。草案默认只输出在对话中：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>使用 Superpowers writing-plans，把确认方案拆成可独立验证的任务。
+
+计划必须包含：
+- 每步涉及的具体文件；
+- 输入、输出和依赖；
+- 测试先行步骤；
+- 每步验证命令；
+- 多仓库执行顺序；
+- 失败时的停止条件。
+
+禁止包含 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及外部系统写入。只在对话中输出计划，不保存文件、不创建 AGENTS.md；输出后等待我确认。</code></pre></div>
+<p>检查计划是否夹带未确认需求、无关重构或 Git 提交步骤。Superpowers 原始流程可能建议频繁 commit，你的边界优先，必须删除这些步骤。</p>
+<h4 id="tutorial-阶段-6-实施" data-nav-heading>阶段 6：实施</h4>
+<p>你确认计划后发送：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>计划确认，开始实施。
+
+要求：
+- 严格按计划和现有项目规范修改；
+- 保留已有用户修改；
+- 使用测试驱动覆盖新增或修复行为；
+- 遇到超出范围、需求冲突或公共契约变化时立即停止询问；
+- 不执行 commit、push、任何 PR 变更、部署、发布，不连接或写入数据库，也不改变外部系统；
+- 完成前持续更新任务进度。</code></pre></div>
+<p>小任务可以用短方案与短计划，只有满足第 3.6 节全部条件且你明确合并批准，才可以一次确认后实施；不能只凭“任务小”跳过计划。</p>
+<h4 id="tutorial-阶段-7-验证" data-nav-heading>阶段 7：验证</h4>
+<p>要求 AI 根据改动选择验证层级：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>请重新执行与本次改动直接相关的验证：
+1. 格式化和静态检查；
+2. 精确单元测试；
+3. 相关包测试；
+4. 必要时才运行更大范围测试；
+5. 核对验收标准和异常流程。
+
+列出实际命令、退出码、关键结果、未执行项和原因。不得用“应该通过”替代结果。</code></pre></div>
+<p>Go 项目常见顺序如下。执行前必须先检查测试代码、配置和环境变量；如果可能连接数据库、队列、外部 API、测试/生产环境或真实凭据，则不执行这些命令，改用 mock/单元测试或只提供人工步骤：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>gofmt -w path/to/changed.go
+go vet ./path/to/changed/package/...
+go test ./path/to/changed/package/... -count=1
+go test ./related/module/... -count=1</code></pre></div>
+<p><code>gofmt -w</code> 会修改文件，必须限定到本次文件。<code>go mod tidy</code>、<code>go generate</code> 也会修改文件，未经需要不要执行。</p>
+<h4 id="tutorial-阶段-8-本地-review-与交付" data-nav-heading>阶段 8：本地 Review 与交付</h4>
+<p>在桌面端或 CLI 使用 <code>/review</code>，或者输入：</p>
+<p>这里的“Review”是检查当前本地差异：可使用客户端 <code>/review</code> 命令、Superpowers 的 <code>requesting-code-review</code> Skill，或直接发送下面的自然语言提示。三种入口目标相同，不代表提交 PR。</p>
+<p>严重度统一口径：</p>
+<ul>
+<li><strong>P0</strong>：会造成数据丢失、安全事故、核心服务不可用等灾难性影响；立即停止交付，必须先修复。</li>
+<li><strong>P1</strong>：会导致核心功能错误、明显回归或公共契约破坏；本次本地交付前必须修复。</li>
+<li><strong>P2</strong>：非阻断问题、可维护性问题或测试缺口；允许记录后续处理，但必须说明风险和建议。</li>
+</ul>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>Review 当前未提交修改。
+
+重点检查：
+- 是否满足已确认需求和验收标准；
+- 是否存在 Bug、回归、并发、事务和兼容风险；
+- 是否遗漏异常路径或测试；
+- 是否混入无关修改；
+- 是否误改已有用户文件。
+
+先按 P0/P1/P2 列出问题并引用文件位置；没有问题时明确说明剩余风险。不要修改代码。</code></pre></div>
+<p>最终报告必须包含：</p>
+<ul>
+<li>实际修改文件；</li>
+<li>行为变化；</li>
+<li>实际验证命令与结果；</li>
+<li>未验证内容及原因；</li>
+<li>剩余风险；</li>
+<li><code>git status --short</code> 和未跟踪文件情况；</li>
+<li>明确说明未 commit、未 push、未进行任何 PR 变更、未部署、未发布、未连接或写入数据库、未改变外部系统。</li>
+</ul>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="6. 各类场景应该怎么操作"><h3 id="tutorial-6-各类场景应该怎么操作" data-nav-heading>6. 各类场景应该怎么操作</h3>
+<h4 id="tutorial-6-1-prd-梳理与生产级需求" data-nav-heading>6.1 PRD 梳理与生产级需求</h4>
+<p><strong>推荐入口</strong>：先用 ChatGPT Work；需要核对真实实现时切到 Codex。</p>
+<p>操作流程：</p>
+<ol>
+<li>给 Work 提供原始 PRD、正式 UI、接口文档和已有约束。</li>
+<li>明确资料优先级，例如“正式 PRD &gt; 正式 UI &gt; 接口文档；演示原型仅参考”。</li>
+<li>要求区分事实、推测、冲突、缺失、建议。</li>
+<li>一次确认一个会改变业务结果的问题。</li>
+<li>输出 AI 执行版 PRD：范围、角色、流程、规则、状态、异常、权限、数据、接口、验收、非目标。</li>
+<li>切到代码仓库的 Codex，只读核对需求与真实实现。</li>
+<li>让 Codex 列出无法由代码证明的业务假设，再返回 Work/产品确认。</li>
+</ol>
+<p>合格标准：</p>
+<ul>
+<li>每条关键规则可判断“通过/不通过”；</li>
+<li>正常、异常、空状态、并发和权限路径明确；</li>
+<li>名词、状态和值域唯一；</li>
+<li>资料冲突有明确裁决；</li>
+<li>没有把技术建议写成已确认产品规则；</li>
+<li>非目标清楚，避免 AI 顺手扩展。</li>
+</ul>
+<h4 id="tutorial-6-2-新功能" data-nav-heading>6.2 新功能</h4>
+<p>默认使用：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>brainstorming -&gt; writing-plans -&gt; test-driven-development
+-&gt; verification-before-completion -&gt; review</code></pre></div>
+<p>关键要求：先找现有相似功能；确认接口兼容、数据所有者、事务和幂等；方案和计划均获批准后才编辑，包括先写失败测试；最终从用户可见行为反向核对验收标准。</p>
+<h4 id="tutorial-6-3-bug-修复" data-nav-heading>6.3 Bug 修复</h4>
+<p>默认使用：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>systematic-debugging -&gt; test-driven-development -&gt; verification-before-completion</code></pre></div>
+<p>执行顺序：</p>
+<ol>
+<li>用已有日志、测试或经副作用检查的本地操作复现，不新增文件或插桩；</li>
+<li>从日志、调用链、状态和数据找到根因证据；</li>
+<li>在对话中展示最小修复方案、涉及文件和回归测试计划，按第 3.6 节取得方案与计划批准；</li>
+<li>批准后写一个修复前会失败的回归测试，实际确认失败原因符合预期；</li>
+<li>做最小修复，重新运行原复现和相关回归。</li>
+</ol>
+<p>如果复现必须新增测试、临时脚本或插桩，也先申请准确文件范围的诊断实验授权；这不等于已批准修复方案，更不允许访问数据库/外部系统。</p>
+<p>禁止：看到报错就改、一次混入多个猜测、吞掉错误、盲目重试、扩大重构范围。</p>
+<h4 id="tutorial-6-4-重构" data-nav-heading>6.4 重构</h4>
+<p>先定义必须保持不变的可观察行为：对外接口和错误码、RPC/HTTP 字段、数据读写结果、事务和并发语义、必要日志/指标/事件契约。</p>
+<p>如果测试不足，先在方案中列出特征测试，方案与计划获批后再写。每一步应保持可编译、可测试；不要把新功能混进重构。</p>
+<h4 id="tutorial-6-5-性能优化" data-nav-heading>6.5 性能优化</h4>
+<p>性能结论至少包含：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>基线环境 + 数据规模 + 负载模型 + 当前指标 + 目标指标 + 测量工具</code></pre></div>
+<p>流程：固定条件建立基线；用 profile、trace、用户提供的 SQL 执行计划或指标证明瓶颈；如需 <code>EXPLAIN</code>，只生成语句供人工执行并分析用户提供的结果，AI 不连接数据库；一次验证一个假设；确认后最小优化；相同条件复测平均值、P95/P99、错误率和资源消耗；最后做正确性回归。</p>
+<p>没有前后对比数据时，只能说“实施了优化尝试”，不能说“性能已提升”。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="7. 单仓库与多仓库"><h3 id="tutorial-7-单仓库与多仓库" data-nav-heading>7. 单仓库与多仓库</h3>
+<h4 id="tutorial-7-1-单仓库" data-nav-heading>7.1 单仓库</h4>
+<p>一个任务绑定一个项目根目录。开始时确认：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>pwd
+git rev-parse --show-toplevel
+git status --short --branch</code></pre></div>
+<p>不要从父目录启动后让 AI 搜索全部工作区，这会增加误改邻近仓库的风险。</p>
+<h4 id="tutorial-7-2-多仓库" data-nav-heading>7.2 多仓库</h4>
+<p>先建立依赖表：</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>仓库</th>
+<th>职责</th>
+<th>本次改动</th>
+<th>对外契约</th>
+<th>验证方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>服务 A</td>
+<td>数据/业务规则所有者</td>
+<td>表模型、RPC</td>
+<td>RPC v1 兼容</td>
+<td>单测、集成测试</td>
+</tr>
+<tr>
+<td>服务 B</td>
+<td>API 聚合</td>
+<td>字段透传、HTTP</td>
+<td>HTTP 响应兼容</td>
+<td>Handler 测试</td>
+</tr>
+<tr>
+<td>客户端 C</td>
+<td>消费者</td>
+<td>展示新字段</td>
+<td>兼容字段为空</td>
+<td>UI/契约测试</td>
+</tr>
+</tbody></table>
+</div>
+<p>推荐顺序：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>契约确认 -&gt; 提供者实现 -&gt; 提供者验证 -&gt; 消费者适配 -&gt; 跨仓联调说明</code></pre></div>
+<p>每个仓库分别记录根目录、分支、已有修改、Go 版本、启动/测试命令。不要让多个代理同时修改同一个共享文件。</p>
+<p>多仓任务提示：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>这是多仓库变更。先不要修改代码。
+
+请输出：
+1. 每个仓库的职责和数据所有权；
+2. 调用方向和公共契约；
+3. 向前/向后兼容策略；
+4. 推荐修改顺序；
+5. 每个仓库独立验证方式；
+6. 跨仓联调仍需要人工完成的事项。
+
+如果某个仓库不可访问，不要猜测其实现。</code></pre></div>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="8. OpenSpec 的具体使用方法"><h3 id="tutorial-8-openspec-的具体使用方法" data-nav-heading>8. OpenSpec 的具体使用方法</h3>
+<h4 id="tutorial-8-1-什么时候不要使用" data-nav-heading>8.1 什么时候不要使用</h4>
+<ul>
+<li>只改一个判断或文案；</li>
+<li>根因明确的小 Bug；</li>
+<li>一次性分析，不会形成代码变更；</li>
+<li>需求还没确认；</li>
+<li>引入规格文件的维护成本高于任务价值。</li>
+</ul>
+<p>此时直接用 Superpowers 的短设计和计划更轻。</p>
+<h4 id="tutorial-8-2-第一次在项目使用" data-nav-heading>8.2 第一次在项目使用</h4>
+<p>进入明确的项目根目录：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>cd /path/to/project
+openspec --version
+openspec init --tools codex</code></pre></div>
+<p>注意：</p>
+<ul>
+<li><code>init</code> 会创建项目内文件，先看 <code>git status</code>，预览并确认生成范围；不能创建 <code>AGENTS.md</code> 等规则文件，无法避免时暂不初始化；</li>
+<li>不要在包含多个仓库的公共父目录初始化；</li>
+<li>初始化后重开 Codex 任务，确保 Skills 被读取；</li>
+<li>在 Codex 输入 <code>$</code> 或查看 Skills，确认实际可用名称。</li>
+</ul>
+<p>OpenSpec 1.14.1 为 Codex 生成的常见 Skills 包括：</p>
+<ul>
+<li><code>$openspec-propose</code></li>
+<li><code>$openspec-apply-change</code></li>
+<li><code>$openspec-verify-change</code></li>
+<li><code>$openspec-archive-change</code></li>
+<li><code>$openspec-explore</code></li>
+</ul>
+<p>桌面端可能要求从 Skills 侧栏选择名称，而不是直接输入 <code>$</code>。以 <code>openspec init</code> 的提示和当前客户端 UI 为准。</p>
+<h4 id="tutorial-8-3-复杂功能的推荐组合" data-nav-heading>8.3 复杂功能的推荐组合</h4>
+<ol>
+<li><strong>先澄清</strong>：用 Superpowers <code>brainstorming</code> 一次确认一个问题。</li>
+<li><strong>创建规格</strong>：先在对话展示提案草案；你明确授权“仅保存到 <code>openspec/changes/实际变更名/</code>”后，才使用 <code>openspec-propose</code> 写已确认内容。不授权业务代码、测试或规则文件。</li>
+<li><strong>检查规格</strong>：规格已获准保存后，可运行当前版本支持的列表/规格校验命令；先确认不会安装依赖、联网或改变外部状态。</li>
+</ol>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>openspec list
+openspec status
+openspec validate order-cancel-reason
+openspec show order-cancel-reason</code></pre></div>
+<p>其中 <code>order-cancel-reason</code> 是示例变更名，执行时替换为实际的英文短横线名称；不要输入尖括号。</p>
+<ol start="4">
+<li><strong>计划</strong>：用 <code>writing-plans</code>，删除所有 commit、push、任何 PR 变更和发布步骤，等你确认。</li>
+<li><strong>实施</strong>：选择 <code>openspec-apply-change</code>，同时要求测试驱动和停止条件。</li>
+<li><strong>验证</strong>：选择 <code>openspec-verify-change</code>，把每条规格映射到代码与测试证据。</li>
+<li><strong>归档</strong>：<code>openspec-archive-change</code> 会修改 OpenSpec 文件。你不需要强制归档；只有明确需要整理本地规格时才执行，且仍不得 commit。</li>
+</ol>
+<h4 id="tutorial-8-4-默认策略" data-nav-heading>8.4 默认策略</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>Superpowers 默认启用；OpenSpec 按复杂度启用。</code></pre></div>
+<p>比 OpenSpec 更合适的轻量方案通常是：已确认 PRD + Codex <code>/plan</code> + 验收清单。只有“长期保存和追踪规格”确实创造价值时才引入 OpenSpec。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="9. 让 Codex 自动选择插件能力"><h3 id="tutorial-9-让-codex-自动选择插件能力" data-nav-heading>9. 让 Codex 自动选择插件能力</h3>
+<p>不要背诵所有插件名称。描述数据来源和目标，让 Codex 选择能力：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>请先判断完成该任务需要哪些已安装能力或插件，并说明用途。
+只选择必要能力；可以只读获取已授权资料。任何写入、发送、上传或外部状态变化在本任务中都禁止执行，只能生成操作说明。</code></pre></div>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>需要的能力</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>阅读 Word/PDF/Excel</td>
+<td>文档、PDF、表格能力</td>
+<td>提取规则、交叉核对</td>
+</tr>
+<tr>
+<td>读取飞书 PRD</td>
+<td>飞书文档/知识库能力</td>
+<td>只读指定章节</td>
+</tr>
+<tr>
+<td>API 设计和验证</td>
+<td>API 文档、Postman、HTTP 测试能力</td>
+<td>生成集合、执行本地请求</td>
+</tr>
+<tr>
+<td>页面交互核对</td>
+<td>浏览器/Playwright</td>
+<td>本地 UI 截图和流程验证</td>
+</tr>
+<tr>
+<td>技术流程图</td>
+<td>Draw.io/图表能力</td>
+<td>架构、时序、ER 图</td>
+</tr>
+<tr>
+<td>重复研发流程</td>
+<td>Skill</td>
+<td>固定输入、步骤和交付格式</td>
+</tr>
+</tbody></table>
+</div>
+<p>安全规则：读取不等于写入。本教程范围内不得发送消息、修改云文档、上传文件、连接或写入数据库，也不得调用有副作用接口；如业务确实需要，只输出交由人工执行的步骤，不在当前任务中操作。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="10. 桌面端、VS Code 和 CLI 怎么选"><h3 id="tutorial-10-桌面端-vs-code-和-cli-怎么选" data-nav-heading>10. 桌面端、VS Code 和 CLI 怎么选</h3>
+<h4 id="tutorial-10-1-codex-桌面端" data-nav-heading>10.1 Codex 桌面端</h4>
+<p>最适合完整任务、长流程、多文件修改、文档与浏览器协作。</p>
+<ol>
+<li>为仓库建立独立项目或从正确目录新建任务；</li>
+<li>检查页面显示的工作目录；</li>
+<li>用 <code>@</code> 引用文件、插件或应用；</li>
+<li>复杂任务先 <code>/plan</code>；</li>
+<li>实施结束后打开 diff 或使用 <code>/review</code>；</li>
+<li>保留当前任务用于同一问题的后续修正。</li>
+</ol>
+<h4 id="tutorial-10-2-vs-code" data-nav-heading>10.2 VS Code</h4>
+<p>最适合边读代码边提问、解释选中逻辑、小范围修改。</p>
+<ol>
+<li>VS Code 只打开当前仓库根目录；</li>
+<li>在 Codex 面板引用当前文件或选中代码；</li>
+<li>明确关联入口和期望行为，不只发一段孤立代码；</li>
+<li>大范围任务交给桌面端项目或独立任务；</li>
+<li>修改后仍回到 Git diff 和测试验证。</li>
+</ol>
+<h4 id="tutorial-10-3-codex-cli" data-nav-heading>10.3 Codex CLI</h4>
+<p>最适合习惯终端、需要快速执行命令、远程或纯代码环境。</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>cd /path/to/repository
+codex</code></pre></div>
+<p>常用动作：</p>
+<ul>
+<li><code>/plan</code>：复杂任务先规划；</li>
+<li><code>/review</code>：Review 差异、提交或相对分支；</li>
+<li><code>/status</code>：查看当前会话状态；</li>
+<li><code>/resume</code>：恢复已保存会话；</li>
+<li><code>/fork</code>：从当前上下文分叉一个真正不同的方向；</li>
+<li><code>/compact</code>：压缩过长上下文；</li>
+<li><code>/plugins</code>：插件界面（若当前版本提供）。</li>
+</ul>
+<p>客户端命令会随版本变化，输入 <code>/</code> 查看当前可用命令，不要盲目照抄不存在的命令。</p>
+<h4 id="tutorial-10-4-的区别" data-nav-heading>10.4 <code>@</code>、<code>/</code>、<code>$</code> 的区别</h4>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>符号</th>
+<th>用途</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@</code></td>
+<td>引用文件、应用或插件</td>
+<td><code>@Superpowers</code>、<code>@api.md</code></td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td>客户端命令</td>
+<td><code>/plan</code>、<code>/review</code>、<code>/status</code></td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>显式选择 Skill（支持时）</td>
+<td><code>$openspec-propose</code></td>
+</tr>
+</tbody></table>
+</div>
+<p>如果补全列表没有某个名称，不要硬输。改用自然语言“使用 Superpowers 的 systematic-debugging”，或从当前 Skills/插件列表选择。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="11. 模型与推理强度"><h3 id="tutorial-11-模型与推理强度" data-nav-heading>11. 模型与推理强度</h3>
+<p>不需要频繁换模型。优先使用客户端当前推荐的通用编码模型，再按任务调整推理强度。</p>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>任务</th>
+<th>推荐强度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查文件、解释代码、小范围明确修改</td>
+<td>Low/Medium</td>
+</tr>
+<tr>
+<td>PRD 与代码核对、一般新功能、常规 Bug</td>
+<td>Medium/High</td>
+</tr>
+<tr>
+<td>复杂根因、跨服务设计、并发/事务问题</td>
+<td>High/Extra High</td>
+</tr>
+<tr>
+<td>简单格式转换、机械整理</td>
+<td>Low</td>
+</tr>
+</tbody></table>
+</div>
+<p>提高强度不能弥补缺少上下文。对复杂任务，先提供正确文件、日志、验收标准，再考虑提高推理强度。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="12. 会话、项目、Fork 和 Worktree"><h3 id="tutorial-12-会话-项目-fork-和-worktree" data-nav-heading>12. 会话、项目、Fork 和 Worktree</h3>
+<h4 id="tutorial-12-1-继续当前会话" data-nav-heading>12.1 继续当前会话</h4>
+<ul>
+<li>仍在解决同一个需求或 Bug；</li>
+<li>新问题依赖当前已确认结论；</li>
+<li>正在对刚生成的方案、代码或 Review 反馈迭代。</li>
+</ul>
+<h4 id="tutorial-12-2-新建会话" data-nav-heading>12.2 新建会话</h4>
+<ul>
+<li>目标已经改变；</li>
+<li>切换到另一个独立功能或 Bug；</li>
+<li>旧会话包含大量无关历史，容易污染判断；</li>
+<li>需要在另一个仓库执行独立工作。</li>
+</ul>
+<h4 id="tutorial-12-3-fork-会话" data-nav-heading>12.3 Fork 会话</h4>
+<p>同一事实基础上，需要比较两个互斥方案时使用。Fork 后两个会话不会自动同步新结论，最终要明确采用哪个方向。</p>
+<h4 id="tutorial-12-4-worktree" data-nav-heading>12.4 Worktree</h4>
+<p>只有在需要隔离不同任务或并行修改时使用。Worktree 是另一个检出目录，不是备份，也不会自动保存未提交改动。</p>
+<p>你的特殊规则：</p>
+<ul>
+<li>创建 Worktree 前必须确认；</li>
+<li>不允许 Superpowers 自动 commit；</li>
+<li>不并行修改相同文件；</li>
+<li>完成后只交付本地差异和验证结果，不合并、不提交。</li>
+</ul>
+<h4 id="tutorial-12-5-长会话管理" data-nav-heading>12.5 长会话管理</h4>
+<ul>
+<li>一个会话只服务一个清晰结果；</li>
+<li>阶段结束时让 AI 输出“已确认事实、未决问题、修改和验证”；</li>
+<li>上下文过长时使用 <code>/compact</code>，压缩后复核关键约束；</li>
+<li>新会话首条消息附上最终 PRD、计划、当前 Git 状态以及第 3.5 节的规则路径；要求复述生效规则与来源，不复制全部闲聊历史。</li>
+</ul>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="13. Go 项目的验证方法"><h3 id="tutorial-13-go-项目的验证方法" data-nav-heading>13. Go 项目的验证方法</h3>
+<h4 id="tutorial-13-1-先确认模块边界" data-nav-heading>13.1 先确认模块边界</h4>
+<p>先阅读模块文件再执行命令。下面禁用自动工具链/模块下载；这仍可能写本地缓存，不等于只读沙箱。缺少本地版本/依赖时停止并报告，下载需单独授权，不修改依赖版本来绕过。</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>GOTOOLCHAIN=local go version
+GOTOOLCHAIN=local go env GOMOD GOWORK GOPATH GOPROXY GOPRIVATE CGO_ENABLED
+GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off go list -mod=readonly -m
+GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off go list -mod=readonly ./path/to/package/...</code></pre></div>
+<ul>
+<li><code>go.mod</code> 锁定依赖版本；清缓存不会自动升级依赖；</li>
+<li><code>go.work</code> 可能让项目使用本地模块而不是缓存版本；</li>
+<li>私有模块需要正确的 <code>GOPRIVATE</code>、网络和凭据；</li>
+<li>CGO、构建标签和目标 OS 可能导致本机测试与生产构建不同。</li>
+</ul>
+<h4 id="tutorial-13-2-分层验证" data-nav-heading>13.2 分层验证</h4>
+<p>运行任何测试前，先只读检查测试代码、配置和环境变量，确认不会连接数据库、队列、外部 API、测试/生产环境，也不会读取真实凭据或改变外部状态。无法排除副作用时停止执行，改用 mock/单元测试，或只提供人工验证步骤。</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code># 精确测试
+go test ./internal/path -run '^TestSpecificBehavior$' -count=1
+
+# 相关包
+go test ./internal/path/... -count=1
+
+# 静态检查
+go vet ./internal/path/...
+
+# 并发风险（项目支持时）
+go test -race ./internal/path/... -count=1
+
+# 全量测试（成本和环境允许时）
+go test ./... -count=1</code></pre></div>
+<p>以上命令也受第 3.4 节的下载/缓存约束；未授权下载时同样设置 <code>GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off</code> 并视项目支持使用 <code>-mod=readonly</code>，不要忽略自定义构建脚本的联网行为。执行后复核模块/校验文件和 Git 差异。</p>
+<p>记录每条命令的范围。某个包测试通过，不代表数据库集成、跨服务联调和生产环境都通过。<code>-race</code> 只检查实际执行路径中的内存数据竞争；通过只能说“受测路径未发现数据竞争”，不能证明没有所有并发问题、事务隔离错误或死锁。</p>
+<h4 id="tutorial-13-3-go-修改常见风险" data-nav-heading>13.3 Go 修改常见风险</h4>
+<ul>
+<li><code>go mod tidy</code> 会修改 <code>go.mod/go.sum</code>；</li>
+<li><code>go generate</code> 会覆盖生成文件；</li>
+<li><code>gofmt -w</code> 会写文件，避免格式化整个仓库；</li>
+<li>指针、零值、JSON/Form 标签和兼容性需要分别验证；</li>
+<li>goroutine、channel、锁和共享 map 需要考虑竞态与退出；</li>
+<li><code>context</code> 的超时和取消必须沿调用链传递；</li>
+<li>事务函数内部不要混入不可回滚的外部副作用。</li>
+</ul>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="14. MySQL 与 SQL 的安全方法"><h3 id="tutorial-14-mysql-与-sql-的安全方法" data-nav-heading>14. MySQL 与 SQL 的安全方法</h3>
+<p>本教程默认只生成 SQL，不执行。</p>
+<p>设计或 Review 时至少检查：</p>
+<ul>
+<li>表和字段的所有者；</li>
+<li>主键、唯一性、普通索引和查询条件；</li>
+<li><code>NULL</code>、默认值、金额精度、时区和字符集；</li>
+<li>逻辑删除与唯一索引的组合；</li>
+<li>事务边界、锁顺序、死锁与幂等；</li>
+<li>迁移的向前/向后兼容；</li>
+<li>多仓库客户端升级窗口；</li>
+<li>大表 DDL 和数据回填风险。</li>
+</ul>
+<p>连接概念：</p>
+<ul>
+<li><code>localhost</code> 在某些 MySQL 客户端中可能走 Unix Socket；</li>
+<li><code>127.0.0.1</code> 明确走 TCP；</li>
+<li>不要把真实 DSN、密码和生产地址写进提示词或文档；</li>
+<li>使用占位符和合成数据。</li>
+</ul>
+<p>生成 SQL 时要求：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>只生成 SQL 文件和预检/回滚说明，不连接或写入任何数据库。
+所有数据假设、影响行数估算、幂等条件和风险必须列出。
+涉及 DROP、TRUNCATE、DELETE、UPDATE 或大表 DDL 时单独标红，不得执行。</code></pre></div>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="15. 完整主案例：跨仓库新增订单取消原因"><h3 id="tutorial-15-完整主案例-跨仓库新增订单取消原因" data-nav-heading>15. 完整主案例：跨仓库新增订单取消原因</h3>
+<p>这是示范流程，不对应真实项目。</p>
+<h4 id="tutorial-15-1-背景" data-nav-heading>15.1 背景</h4>
+<ul>
+<li><code>order-core</code>：Go 服务，拥有订单表和 RPC；</li>
+<li><code>order-api</code>：Go 服务，对外提供 HTTP 订单详情；</li>
+<li>需求：订单取消后，详情页返回取消原因；</li>
+<li>MySQL 只允许生成 DDL，不执行；</li>
+<li>旧客户端必须继续工作。</li>
+</ul>
+<h4 id="tutorial-15-2-在-work-梳理-prd" data-nav-heading>15.2 在 Work 梳理 PRD</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>梳理“订单取消原因展示”需求。
+
+请一次只问一个问题，最终明确：
+- 哪些取消状态需要原因；
+- 原因来源、值域和为空行为；
+- 用户可见文案；
+- 历史订单处理；
+- 权限与隐私；
+- HTTP/RPC 兼容性；
+- 验收标准和非目标。
+
+只整理需求，不做技术实现假设。</code></pre></div>
+<h4 id="tutorial-15-3-在-codex-只读调查两个仓库" data-nav-heading>15.3 在 Codex 只读调查两个仓库</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>依据已确认 PRD，只读分析 order-core 和 order-api。
+
+输出仓库职责、取消流程调用链、订单模型、RPC/HTTP 契约、现有测试和兼容风险。
+先检查两个仓库的 git status，保留已有修改。不要修改文件。</code></pre></div>
+<h4 id="tutorial-15-4-逐项确认" data-nav-heading>15.4 逐项确认</h4>
+<p>依次确认：原因存储为枚举码还是文本；历史订单为空时的展示；RPC 新字段是否可选；需要数据库字段还是已有权威来源。</p>
+<p>一个兼容设计示例：</p>
+<ul>
+<li><code>order-core</code> 是取消原因的数据所有者；</li>
+<li>RPC 响应新增可选字段，旧消费者忽略；</li>
+<li><code>order-api</code> 只透传和做展示映射，不重复推导规则；</li>
+<li>历史订单返回空值，客户端不展示；</li>
+<li>数据库 DDL 单独生成，不执行；</li>
+<li>提供者先完成和验证，再适配消费者。</li>
+</ul>
+<h4 id="tutorial-15-5-计划与实施" data-nav-heading>15.5 计划与实施</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>方案确认。使用 writing-plans 按以下顺序规划：
+1. order-core 回归/新增测试；
+2. 数据模型和取消写入逻辑；
+3. RPC 契约与兼容测试；
+4. order-api 字段映射与 Handler 测试；
+5. 跨仓契约核对；
+6. SQL 文件及人工执行说明。
+
+只在对话输出计划，不保存文件、不写测试或业务代码，等待我确认实施计划。禁止 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及外部系统写入步骤。</code></pre></div>
+<p>确认后再实施。若无法同时打开两个仓库，应分别建立任务，并把已确认契约作为两个任务的共同输入。</p>
+<h4 id="tutorial-15-6-验收" data-nav-heading>15.6 验收</h4>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>验收条件</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>取消订单返回原因</td>
+<td><code>order-core</code> 精确单测</td>
+</tr>
+<tr>
+<td>非取消订单不返回原因</td>
+<td>边界测试</td>
+</tr>
+<tr>
+<td>历史空值兼容</td>
+<td>RPC/HTTP 契约测试</td>
+</tr>
+<tr>
+<td>旧字段无变化</td>
+<td>响应快照或回归测试</td>
+</tr>
+<tr>
+<td>受测路径未发现内存数据竞争</td>
+<td>指定并发测试与可运行时的 <code>-race</code>；记录场景、命令和范围，不推广到全部调度</td>
+</tr>
+<tr>
+<td>数据库隔离、锁顺序、死锁与回滚符合约定</td>
+<td>本地仅静态审查与 mock；真实数据库验证由人工完成，当前标记未验证</td>
+</tr>
+<tr>
+<td>跨服务真实联调符合契约</td>
+<td>本地契约测试不替代真实联调；由人工验收并回填证据</td>
+</tr>
+<tr>
+<td>SQL 未执行</td>
+<td>交付报告明确声明</td>
+</tr>
+</tbody></table>
+</div>
+<p>最后 <code>/review</code> 两个仓库的未提交差异，分别报告测试结果和剩余联调项。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="16. 三个简短案例"><h3 id="tutorial-16-三个简短案例" data-nav-heading>16. 三个简短案例</h3>
+<h4 id="tutorial-16-1-bug-偶发重复扣减" data-nav-heading>16.1 Bug：偶发重复扣减</h4>
+<p>只读检查已有并发证据、幂等键、事务隔离、锁顺序和重试路径；先确认修复方案与测试计划，再写能失败的并发测试并最小修复。模拟测试不能证明真实数据库事务行为，数据库复现留给人工。不要先加锁或重试碰碰运气。</p>
+<h4 id="tutorial-16-2-重构-拆分-800-行-service" data-nav-heading>16.2 重构：拆分 800 行 Service</h4>
+<p>先列出公共方法、调用者和行为契约；用现有测试或特征测试锁定行为；按职责小步拆分；每一步运行相关测试。禁止同时改接口、业务规则和数据库。</p>
+<h4 id="tutorial-16-3-性能-订单列表-p99-过高" data-nav-heading>16.3 性能：订单列表 P99 过高</h4>
+<p>固定数据量、并发和机器；记录 P50/P95/P99、错误率、CPU、内存；用 Trace、用户提供的执行计划等证据定位慢 SQL、N+1 或外部调用；如需 <code>EXPLAIN</code>，只生成语句供人工执行并分析返回结果；一次验证一个假设；同条件复测，正确性回归后再下结论。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="17. 失败时如何继续，而不是让 AI 乱改"><h3 id="tutorial-17-失败时如何继续-而不是让-ai-乱改" data-nav-heading>17. 失败时如何继续，而不是让 AI 乱改</h3>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>问题</th>
+<th>正确处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>测试失败</td>
+<td>区分代码失败、环境失败、旧有失败；保留完整命令和首个根因</td>
+</tr>
+<tr>
+<td>依赖下载失败</td>
+<td>检查网络、GOPROXY/GOPRIVATE 和权限；不要改业务代码绕过</td>
+</tr>
+<tr>
+<td>端口占用</td>
+<td>找到占用进程和归属；确认后再停止，不盲目 kill</td>
+</tr>
+<tr>
+<td>用户提供 MySQL 连接失败日志</td>
+<td>从日志区分 Socket/TCP、服务状态、账号权限和库是否存在；AI 不实际连接</td>
+</tr>
+<tr>
+<td>测试偶发失败</td>
+<td>重复运行并记录频率、随机种子和并发条件；不要直接重跑到绿</td>
+</tr>
+<tr>
+<td>上下文中断</td>
+<td>输出当前事实、计划进度、修改、验证和下一步，再开新任务</td>
+</tr>
+<tr>
+<td>发现需求冲突</td>
+<td>停止实现，回到一次一个问题的确认流程</td>
+</tr>
+<tr>
+<td>用户已有修改</td>
+<td>不覆盖、不回滚；分清本次差异，必要时请求你决定</td>
+</tr>
+</tbody></table>
+</div>
+<p>通用停止提示词：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>停止继续猜测修改。请使用 systematic-debugging：
+1. 保留当前失败证据；
+2. 区分环境问题、既有问题和本次回归；
+3. 给出最小验证实验；
+4. 在根因确认前不要修改业务代码。</code></pre></div>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="18. 如何判断交付是否合格"><h3 id="tutorial-18-如何判断交付是否合格" data-nav-heading>18. 如何判断交付是否合格</h3>
+<p>只有同时满足以下条件，才可以认为本地实现完成：</p>
+<ul>
+<li>需求、方案和实施计划经过你确认（合并批准仅限第 3.6 节条件）；</li>
+<li>修改范围与计划一致；</li>
+<li>本地范围内每条验收标准都有对应证据；需真实环境的条目明确标记未验证和人工责任人，不能算作已完成验收；</li>
+<li>实际执行了相关格式化、检查和测试；</li>
+<li>Review 没有未处理的 P0/P1 问题；</li>
+<li>未验证项和剩余风险已明确；</li>
+<li>已有用户修改未被覆盖；</li>
+<li>没有 commit、push、任何 PR 变更、部署、发布、数据库连接或写入，也没有改变外部系统；</li>
+<li>本地进程、临时文件和测试资源得到说明或清理。</li>
+</ul>
+<p>不要接受：“理论上可行”“应该能通过”“代码看起来没问题”“已经优化但没有前后数据”“完全符合 PRD 但没有逐条映射”。</p>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="19. 推荐的日常使用习惯"><h3 id="tutorial-19-推荐的日常使用习惯" data-nav-heading>19. 推荐的日常使用习惯</h3>
+<ol>
+<li>每个独立结果一个会话，不把整个项目堆在一个会话。</li>
+<li>第一条消息始终写目标、上下文、约束/非目标、完成标准。</li>
+<li>正式项目默认先分析、确认方案，再确认实施计划和文件范围，才授权修改。</li>
+<li>新功能和 Bug 默认使用 Superpowers；复杂跨仓再加 OpenSpec。</li>
+<li>让 Codex 先读项目现有模式，不让它凭空设计。</li>
+<li>验证必须给实际命令、退出状态和范围。</li>
+<li>最后使用 <code>/review</code>，不要把“测试通过”等同于“没有风险”。</li>
+<li>重复出现的流程可以做成 Skill；不要为了工具而工具。</li>
+<li>永远不粘贴真实密钥、Token、Cookie 或生产 DSN。</li>
+<li>把最终决定保存在 PRD、计划或 OpenSpec 中，不依赖聊天记忆。</li>
+</ol>
+<hr>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="20. 参考与版本说明"><h3 id="tutorial-20-参考与版本说明" data-nav-heading>20. 参考与版本说明</h3>
+<ul>
+<li><a href="https://learn.chatgpt.com/guides/best-practices">OpenAI Codex Best Practices</a></li>
+<li><a href="https://github.com/Fission-AI/OpenSpec">OpenSpec</a></li>
+<li><a href="https://github.com/obra/superpowers">Superpowers</a></li>
+</ul>
+<p>本文按 2026-10-20 可用能力编写。客户端菜单、Slash 命令和 Skill 名称可能随版本变化；实际使用时以当前客户端的补全列表、插件页面和 <code>--help</code> 输出为准。</p>
+<p>本轮未能成功访问 AGENTS.md 官方细则页，因此没有把固定搜索路径、覆盖优先级或客户端菜单名写成已核实事实；已有规则需按当前客户端实际读取结果核对。</p>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="tutorial" data-title="21. 常用术语速查"><h3 id="tutorial-21-常用术语速查" data-nav-heading>21. 常用术语速查</h3>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>术语</th>
+<th>简单理解</th>
+<th>使用时注意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PRD</td>
+<td>产品需求说明：用户要什么、规则是什么、怎样验收</td>
+<td>技术猜测不等于产品已确认</td>
+</tr>
+<tr>
+<td>TRD</td>
+<td>技术方案说明：系统怎样实现需求、接口/数据/异常怎样处理</td>
+<td>应基于实际工程与已确认 PRD</td>
+</tr>
+<tr>
+<td>契约</td>
+<td>调用双方共同遵守的字段、值域、错误码和行为约定</td>
+<td>字段没变不代表语义一定兼容</td>
+</tr>
+<tr>
+<td>幂等</td>
+<td>相同业务请求重复执行仍只产生约定的一次业务效果</td>
+<td>重试不等于幂等，需要业务键和边界</td>
+</tr>
+<tr>
+<td>mock</td>
+<td>用可控替身模拟依赖的响应、错误与调用</td>
+<td>mock 通过不能证明真实服务一致</td>
+</tr>
+<tr>
+<td>特征测试</td>
+<td>先记录已有实现的可观察行为，供重构时比较</td>
+<td>它可能记录既有 Bug，不自动代表正确需求</td>
+</tr>
+<tr>
+<td>P95 / P99</td>
+<td>一组样本中约 95% / 99% 的耗时不超过该值</td>
+<td>不是平均耗时；算法、样本量、负载和环境需一致</td>
+</tr>
+<tr>
+<td>diff / Review</td>
+<td>查看改动差异 / 审查行为、风险和遗漏</td>
+<td>Review 不代表创建或提交 PR</td>
+</tr>
+<tr>
+<td>三个阶段</td>
+<td>分析、方案与计划、实施验证交接</td>
+<td>允许多次问答，默认方案和计划分别批准</td>
+</tr>
+</tbody></table>
+</div>
+</section>
+</section>
+<section class="source-group" id="source-checklist" aria-labelledby="source-checklist-title">
+<section class="chapter source-intro" data-search-item data-source="checklist" data-title="Codex 个人研发快速操作清单"><p class="source-kicker">快速清单 · Markdown 原文完整收录</p><h2 id="source-checklist-title" data-nav-heading>Codex 个人研发快速操作清单</h2><p class="source-note">任务开始、实施和交付时逐项核对 · 来源文件：<code>Codex个人研发快速操作清单.md</code></p>
+<blockquote>
+<p>配套：<a href="#source-tutorial-title">完整教程</a> · <a href="#source-templates-title">提示词模板</a> · <a href="#handbook-title">HTML 手册</a><br>默认边界：不 commit、不 push、不进行任何 PR 变更、不部署、不发布、不连接或写入任何数据库、不改变外部系统。
+命令中的 <code>/path/to/...</code>、<code>path/to/...</code> 是占位符，执行前替换为当前项目的真实路径。
+面向已有开发环境的 AI 工具新手；“全流程”止于本地研发与交付。部署、真实数据库与线上验收由人工完成。提示词是执行约定，仍需客户端受限权限配合。</p>
+</blockquote>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="一、30 秒选择模式"><h3 id="checklist-一-30-秒选择模式" data-nav-heading>一、30 秒选择模式</h3>
+<div class="table-scroll" tabindex="0" aria-label="可横向滚动的表格"><table>
+<thead>
+<tr>
+<th>现在要做什么</th>
+<th>使用方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>读 PRD、设计稿、Word/Excel/飞书，梳理业务</td>
+<td>ChatGPT Work</td>
+</tr>
+<tr>
+<td>核对真实代码、实现功能、修 Bug、重构、性能优化</td>
+<td>Codex</td>
+</tr>
+<tr>
+<td>新功能或复杂方案</td>
+<td>Codex + Superpowers <code>brainstorming</code></td>
+</tr>
+<tr>
+<td>Bug 或测试失败</td>
+<td>Codex + <code>systematic-debugging</code></td>
+</tr>
+<tr>
+<td>复杂跨仓、公共接口、需长期保存规格</td>
+<td>Superpowers + OpenSpec</td>
+</tr>
+<tr>
+<td>小范围明确修改</td>
+<td>短方案与短计划；满足合并批准条件才可一次确认；通常不用 OpenSpec</td>
+</tr>
+</tbody></table>
+</div>
+<p>判断口诀：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>产物主要是文档和决策 -&gt; Work
+产物主要是代码和验证 -&gt; Codex
+长期规格需要进仓库 -&gt; 再加 OpenSpec</code></pre></div>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="二、任务开始前"><h3 id="checklist-二-任务开始前" data-nav-heading>二、任务开始前</h3>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>首次使用已完成官方安装/登录，并打开准确仓库；返回目录、资料路径和现有修改均正确。</span></li>
+<li class="task-item"><input type="checkbox" /><span>首次练习可跟做教程 4.5：只有标准库，不用数据库和 OpenSpec。</span></li>
+<li class="task-item"><input type="checkbox" /><span>个人约定新会话粘贴；项目规则引用已有 README/PRD/TRD；不创建 <code>AGENTS.md</code> 等规则文件。</span></li>
+<li class="task-item"><input type="checkbox" /><span>要求 AI 首轮列出实际读取的规则、来源、适用目录、冲突和缺失，不只说“遵守规范”。</span></li>
+<li class="task-item"><input type="checkbox" /><span>项目规则包含版本、目录、命名、公共契约、禁止范围、生成文件、依赖政策和验证命令。</span></li>
+<li class="task-item"><input type="checkbox" /><span>客户端采用受限工作区/网络审批；不要把提示词当作已强制启用的沙箱。</span></li>
+<li class="task-item"><input type="checkbox" /><span>用一句话写清最终行为变化。</span></li>
+<li class="task-item"><input type="checkbox" /><span>给出 PRD、设计稿、接口、代码路径、日志等依据。</span></li>
+<li class="task-item"><input type="checkbox" /><span>写清允许修改的仓库/模块。</span></li>
+<li class="task-item"><input type="checkbox" /><span>写清非目标和禁止变化的契约。</span></li>
+<li class="task-item"><input type="checkbox" /><span>把验收条件写成可判断的结果。</span></li>
+<li class="task-item"><input type="checkbox" /><span>不粘贴密码、Token、Cookie、生产 DSN 或敏感数据。</span></li>
+<li class="task-item"><input type="checkbox" /><span>明确第一轮只读分析，不允许修改文件。</span></li>
+</ul>
+<p>项目预检：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>pwd
+git status --short --branch
+git diff --stat
+git ls-files --others --exclude-standard
+GOTOOLCHAIN=local go version
+GOTOOLCHAIN=local go env GOMOD GOWORK GOPROXY GOPRIVATE</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>确认在正确仓库根目录。</span></li>
+<li class="task-item"><input type="checkbox" /><span>记录已有未提交和未跟踪文件。</span></li>
+<li class="task-item"><input type="checkbox" /><span>已有修改不得覆盖或回滚。</span></li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="三、三个阶段的标准对话"><h3 id="checklist-三-三个阶段的标准对话" data-nav-heading>三、三个阶段的标准对话</h3>
+<p>三个阶段可能包含多条消息；默认方案与实施计划分别确认，不是只允许问答三次。</p>
+<h4 id="checklist-第一阶段-分析" data-nav-heading>第一阶段：分析</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>先读取我提供的规则来源并复述生效规则、来源和缺失项。
+只读分析需求和现有实现。区分事实、推测、冲突、缺失和建议；
+一次只问我一个关键问题。不要修改文件、安装依赖或启动服务。</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>AI 已引用真实文件/代码证据。</span></li>
+<li class="task-item"><input type="checkbox" /><span>已定义目标、边界和非目标。</span></li>
+<li class="task-item"><input type="checkbox" /><span>所有会改变业务结果的问题已逐项确认。</span></li>
+</ul>
+<h4 id="checklist-第二阶段-方案与计划" data-nav-heading>第二阶段：方案与计划</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>使用 Superpowers brainstorming 给出 2-3 个方案及取舍。
+输出推荐方案后停止，等待我选择并确认；不要修改代码。
+方案确认后再输出实施与验证计划，并再次等待我确认。
+计划中禁止 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及外部写入。
+草案只在对话展示。只有我给出准确文档路径并授权仅保存草案后才能落盘，不因此授权代码或测试。</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>方案基于现有项目模式。</span></li>
+<li class="task-item"><input type="checkbox" /><span>公共接口、数据、并发、事务和兼容性已考虑。</span></li>
+<li class="task-item"><input type="checkbox" /><span>每项任务都有文件范围和验证命令。</span></li>
+<li class="task-item"><input type="checkbox" /><span>没有无关重构或未确认需求。</span></li>
+<li class="task-item"><input type="checkbox" /><span>你已明确回复采用哪个方案并批准计划。</span></li>
+</ul>
+<p>合并批准仅适用于：单仓、局部可逆、无需求歧义、不改变公共契约/表结构/依赖/权限/安全/事务；必须同时展示短方案、文件范围、非目标和验证计划。明确回复“确认以上方案与实施计划，允许修改列出文件并运行列出验证”后才可实施，不能由 AI 自动省略关口。</p>
+<h4 id="checklist-第三阶段-实施-验证-review" data-nav-heading>第三阶段：实施、验证、Review</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>计划确认，开始实施。保留已有修改，严格控制范围。
+完成后运行相关检查和测试，再 Review 最终未提交差异。
+列出实际命令、结果、未验证项和剩余风险。</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>新行为/修复有测试保护。</span></li>
+<li class="task-item"><input type="checkbox" /><span>已执行格式化、静态检查和相关测试。</span></li>
+<li class="task-item"><input type="checkbox" /><span>验证是本轮重新执行的，不是旧结果。</span></li>
+<li class="task-item"><input type="checkbox" /><span>已用 <code>/review</code> 或等价方式检查差异。</span></li>
+<li class="task-item"><input type="checkbox" /><span>未处理 P0/P1 问题为 0。</span></li>
+</ul>
+<p>严重度统一口径：</p>
+<ul>
+<li><strong>P0</strong>：会造成数据丢失、安全事故、核心服务不可用等灾难性影响；立即停止交付，必须先修复。</li>
+<li><strong>P1</strong>：会导致核心功能错误、明显回归或公共契约破坏；本次本地交付前必须修复。</li>
+<li><strong>P2</strong>：非阻断问题、可维护性问题或测试缺口；允许记录后续处理，但必须说明风险和建议。</li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="四、场景快捷路线"><h3 id="checklist-四-场景快捷路线" data-nav-heading>四、场景快捷路线</h3>
+<h4 id="checklist-prd" data-nav-heading>PRD</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>Work 梳理资料 -&gt; 一次确认一个问题 -&gt; AI 执行版 PRD
+-&gt; Codex 对照真实代码只读核验 -&gt; 修正需求 -&gt; 进入技术方案</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>标记资料优先级。</span></li>
+<li class="task-item"><input type="checkbox" /><span>事实、推测、建议分开。</span></li>
+<li class="task-item"><input type="checkbox" /><span>状态、值域、异常、权限、空状态和验收标准明确。</span></li>
+</ul>
+<h4 id="checklist-新功能" data-nav-heading>新功能</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>brainstorming -&gt; writing-plans -&gt; TDD -&gt; verification -&gt; review</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>找到现有相似实现。</span></li>
+<li class="task-item"><input type="checkbox" /><span>方案与实施计划均批准后再编辑（包括测试）。</span></li>
+<li class="task-item"><input type="checkbox" /><span>正常与异常流程都有测试。</span></li>
+</ul>
+<h4 id="checklist-bug" data-nav-heading>Bug</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>systematic-debugging -&gt; 安全只读复现 -&gt; 根因证据
+-&gt; 确认方案与测试计划 -&gt; 写失败回归测试 -&gt; 最小修复 -&gt; 原场景与回归验证</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>不是根据表面报错猜修。</span></li>
+<li class="task-item"><input type="checkbox" /><span>没有用吞错或盲目重试掩盖根因。</span></li>
+</ul>
+<h4 id="checklist-重构" data-nav-heading>重构</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>列出不可变行为 -&gt; 确认方案与计划 -&gt; 特征测试 -&gt; 小步重构 -&gt; 每步测试 -&gt; diff review</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>不改变接口、业务规则、事务或数据结果。</span></li>
+<li class="task-item"><input type="checkbox" /><span>不混入新功能。</span></li>
+</ul>
+<h4 id="checklist-性能优化" data-nav-heading>性能优化</h4>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>固定条件基线 -&gt; profile/trace/用户提供的执行计划 -&gt; 确认瓶颈
+-&gt; 一次一个假设 -&gt; 最小优化 -&gt; 同条件复测 -&gt; 正确性回归</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>有环境、数据量、负载、P50/P95/P99、错误率和资源数据。</span></li>
+<li class="task-item"><input type="checkbox" /><span>如需 <code>EXPLAIN</code>，只生成语句供人工执行并分析用户提供的结果；AI 不连接数据库。</span></li>
+<li class="task-item"><input type="checkbox" /><span>没有数据就不宣称性能提升。</span></li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="五、多仓库检查"><h3 id="checklist-五-多仓库检查" data-nav-heading>五、多仓库检查</h3>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>列出每个仓库的职责和数据所有权。</span></li>
+<li class="task-item"><input type="checkbox" /><span>画清调用方向和公共契约。</span></li>
+<li class="task-item"><input type="checkbox" /><span>定义向前/向后兼容窗口。</span></li>
+<li class="task-item"><input type="checkbox" /><span>先改并验证提供者，再适配消费者。</span></li>
+<li class="task-item"><input type="checkbox" /><span>每个仓库分别检查 <code>git status</code>。</span></li>
+<li class="task-item"><input type="checkbox" /><span>每个仓库分别记录测试命令与结果。</span></li>
+<li class="task-item"><input type="checkbox" /><span>不让多个代理并行修改同一个文件。</span></li>
+<li class="task-item"><input type="checkbox" /><span>无法访问的仓库不允许 AI 猜实现。</span></li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="六、OpenSpec 快速判断"><h3 id="checklist-六-openspec-快速判断" data-nav-heading>六、OpenSpec 快速判断</h3>
+<h4 id="checklist-不使用" data-nav-heading>不使用</h4>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>单文件小修或根因明确的小 Bug。</span></li>
+<li class="task-item"><input type="checkbox" /><span>一次性分析。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需求尚未确认。</span></li>
+</ul>
+<h4 id="checklist-使用" data-nav-heading>使用</h4>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>跨多个服务或公共契约。</span></li>
+<li class="task-item"><input type="checkbox" /><span>多阶段交付或需要长期保存规格。</span></li>
+<li class="task-item"><input type="checkbox" /><span>任务清单需要持续追踪。</span></li>
+</ul>
+<p>首次初始化（先预览生成范围并确认；若无法避免创建 <code>AGENTS.md</code> 等规则文件，暂不初始化，采用对话计划）：</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>cd /path/to/project
+openspec --version
+openspec init --tools codex</code></pre></div>
+<p>典型顺序：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>brainstorming -&gt; openspec-propose -&gt; validate -&gt; writing-plans
+-&gt; openspec-apply-change + TDD -&gt; openspec-verify-change</code></pre></div>
+<p>归档不是强制步骤；未经明确需要不执行。</p>
+<p>提案/计划默认先在对话展示；明确授权准确的 <code>openspec/changes/实际变更名/</code> 文档范围后才保存。此授权不包括业务代码、测试或计划执行。</p>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="七、Go 验证清单"><h3 id="checklist-七-go-验证清单" data-nav-heading>七、Go 验证清单</h3>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>确认 <code>go.mod</code>、<code>go.work</code>、Go 版本和私有代理。</span></li>
+<li class="task-item"><input type="checkbox" /><span>Go 查询/构建/测试可能下载模块/工具链、写缓存或校验文件；未授权下载时使用本地工具链和离线设置，缺少依赖就报告。</span></li>
+<li class="task-item"><input type="checkbox" /><span><code>-mod=readonly</code> 不是全盘只读保证；执行后核对模块、校验文件及其他差异。</span></li>
+<li class="task-item"><input type="checkbox" /><span>运行测试前检查测试代码、配置和环境变量；可能访问数据库、队列、外部 API、测试/生产环境或真实凭据时停止，改用 mock/单元测试或只提供人工步骤。</span></li>
+<li class="task-item"><input type="checkbox" /><span>只对本次 Go 文件执行 <code>gofmt</code>。</span></li>
+<li class="task-item"><input type="checkbox" /><span>精确测试加 <code>-count=1</code>。</span></li>
+<li class="task-item"><input type="checkbox" /><span>相关包执行 <code>go vet</code> 和 <code>go test</code>。</span></li>
+<li class="task-item"><input type="checkbox" /><span>并发逻辑在可行时运行 <code>-race</code>。</span></li>
+<li class="task-item"><input type="checkbox" /><span>结论限定为受测路径未发现内存数据竞争，不推断无事务问题/死锁；数据库和真实联调列人工未验证项。</span></li>
+<li class="task-item"><input type="checkbox" /><span>说明是否未运行全量测试及原因。</span></li>
+<li class="task-item"><input type="checkbox" /><span>未经必要不执行 <code>go mod tidy</code>、<code>go generate</code>。</span></li>
+</ul>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>gofmt -w path/to/changed.go
+go vet ./path/to/package/...
+go test ./path/to/package/... -count=1
+go test -race ./path/to/package/... -count=1</code></pre></div>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="八、MySQL/SQL 清单"><h3 id="checklist-八-mysql-sql-清单" data-nav-heading>八、MySQL/SQL 清单</h3>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>只生成 SQL，不执行。</span></li>
+<li class="task-item"><input type="checkbox" /><span>使用占位连接信息，不写真实密码和生产 DSN。</span></li>
+<li class="task-item"><input type="checkbox" /><span>明确数据所有者、主键、唯一性、索引和查询条件。</span></li>
+<li class="task-item"><input type="checkbox" /><span>明确 NULL、默认值、金额精度、时区和字符集。</span></li>
+<li class="task-item"><input type="checkbox" /><span>检查事务、锁顺序、死锁和幂等。</span></li>
+<li class="task-item"><input type="checkbox" /><span>提供预检、影响估算和回滚说明。</span></li>
+<li class="task-item"><input type="checkbox" /><span><code>DROP/TRUNCATE/DELETE/UPDATE</code> 和大表 DDL 单独标为高风险。</span></li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="九、必须停下来问我的情况"><h3 id="checklist-九-必须停下来问我的情况" data-nav-heading>九、必须停下来问我的情况</h3>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>PRD、设计、接口或代码事实冲突。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需要新增表、公共接口或第三方依赖。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需要改变兼容性、事务或数据所有权。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需要访问真实/测试/生产环境。</span></li>
+<li class="task-item"><input type="checkbox" /><span>任务开始要求写数据库或调用有副作用接口：停止执行，只能生成说明或脚本。</span></li>
+<li class="task-item"><input type="checkbox" /><span>任务开始要求发送消息、上传文件或修改云端内容：停止执行，只能生成人工操作步骤。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需要创建 Worktree/分支或修改计划外文件。</span></li>
+<li class="task-item"><input type="checkbox" /><span>发现用户已有改动与任务冲突。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需要删除本地文件或本地可恢复资源：先停止并确认。</span></li>
+<li class="task-item"><input type="checkbox" /><span>要求删除数据库表/数据或外部系统资源：始终不执行，即使确认也只能生成脚本、风险说明和人工步骤。</span></li>
+<li class="task-item"><input type="checkbox" /><span>需求不清楚且不同选择会改变结果。</span></li>
+</ul>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="checklist" data-title="十、交付前最后检查"><h3 id="checklist-十-交付前最后检查" data-nav-heading>十、交付前最后检查</h3>
+<p>以下命令和新测试用于本地实施交付。只整理交接/报告时引用已有证据并标明时间、范围、未验证项，不默认重新运行测试。只读 Review 不自动格式化或修复。</p>
+<div class="code-block" data-language="bash"><div class="code-toolbar" data-ui="true"><span>bash</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>git status --short --branch
+git diff --stat
+git diff
+git diff --cached --stat
+git diff --cached
+git ls-files --others --exclude-standard</code></pre></div>
+<ul>
+<li class="task-item"><input type="checkbox" /><span>修改文件清单准确。</span></li>
+<li class="task-item"><input type="checkbox" /><span>每个验收条件有证据。</span></li>
+<li class="task-item"><input type="checkbox" /><span>命令、退出状态和测试范围已报告。</span></li>
+<li class="task-item"><input type="checkbox" /><span>未验证项和原因已报告。</span></li>
+<li class="task-item"><input type="checkbox" /><span>剩余风险已报告。</span></li>
+<li class="task-item"><input type="checkbox" /><span>临时服务、进程和测试资源已说明或清理。</span></li>
+<li class="task-item"><input type="checkbox" /><span>没有 commit、push、任何 PR 变更、部署或发布。</span></li>
+<li class="task-item"><input type="checkbox" /><span>没有连接或写入数据库，也没有改变外部系统。</span></li>
+</ul>
+<p>最终让 Codex 按下面格式汇报：</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>结果：
+修改文件：
+行为变化：
+验证命令与结果：
+验收标准映射：
+未验证项：
+剩余风险：
+Git/发布状态：未 commit、未 push、未进行任何 PR 变更、未部署、未发布。
+外部状态：未连接或写入数据库、未调用有副作用接口、未修改外部系统。</code></pre></div>
+</section>
+</section>
+<section class="source-group" id="source-templates" aria-labelledby="source-templates-title">
+<section class="chapter source-intro" data-search-item data-source="templates" data-title="Codex 个人研发提示词模板"><p class="source-kicker">提示词模板 · Markdown 原文完整收录</p><h2 id="source-templates-title" data-nav-heading>Codex 个人研发提示词模板</h2><p class="source-note">按场景直接复制，再替换占位内容 · 来源文件：<code>Codex个人研发提示词模板.md</code></p>
+<blockquote>
+<p>使用方法：复制所需模板，把 <code>【】</code> 替换为实际内容。每个模板已内置任务分类、规则来源、执行约定和对应验证方式，可直接作为一条完整提示词使用。<br>配套：<a href="#source-tutorial-title">完整教程</a> · <a href="#source-checklist-title">快速操作清单</a> · <a href="#handbook-title">HTML 手册</a></p>
+</blockquote>
+</section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="0. 默认执行约定"><h3 id="templates-0-默认执行约定" data-nav-heading>0. 默认执行约定</h3><details class="template-details" open><summary>展开模板内容</summary><div class="template-content">
+<p>以下约定已完整放入每个可复制模板；请按本轮任务分类执行。规则可来自现有 README、PRD、团队规范或会话要求，不需要新建规则文件。Skill 的默认保存、提交或执行步骤不能扩张本轮授权。</p>
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：【只读分析 / 文档草案 / 本地实施 / 本地验证 / 证据整理】
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+- 验证按本轮任务分类选择：只读分析和文档草案核对内容与静态证据；本地实施或明确验证任务才运行审查过的必要本地检查；交接和报告只整理已有结果，不新增执行。
+- 运行代码前检查入口、初始化、脱敏配置、环境变量名、网络和工具行为；无法排除数据库、外部系统或敏感数据副作用时不执行。不自行下载依赖或 toolchain、安装工具或启动服务。
+- 报告证据来源、实际执行范围、未验证项和剩余风险；没有执行就明确写未执行。局部测试通过不能证明所有场景无竞态或无事务问题。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="1. 通用任务启动模板"><h3 id="templates-1-通用任务启动模板" data-nav-heading>1. 通用任务启动模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读任务启动与范围澄清。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+业务任务类型：【PRD梳理 / 新功能 / Bug修复 / 重构 / 性能优化】
+
+目标：
+【一句话说明最终要达到的结果】
+
+业务背景：
+【为什么要做、谁会使用】
+
+上下文与依据：
+- 【PRD/设计稿/接口文档路径或链接】
+- 【相关仓库和代码目录】
+- 【日志、截图、错误信息】
+
+允许范围：
+- 【仓库/模块/文件】
+
+非目标：
+- 【明确本次不做的内容】
+
+不能改变：
+- 【公共接口、数据结构、业务行为、兼容性、事务等】
+
+完成标准：
+- 【可验证条件1】
+- 【可验证条件2】
+- 【必须通过的测试或检查】
+
+本轮只读分析；除已有明确授权的分析文档保存外，不修改文件。区分事实、推测、冲突、信息缺失和建议；
+先检查真实项目和已有修改，然后一次只问我一个最关键的问题。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+核对任务目标、资料来源、范围、非目标与完成标准；引用已读取的证据，区分事实和假设。不运行代码、测试或计划命令；缺少的证据明确列为待核验。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="2. ChatGPT Work：PRD 梳理模板"><h3 id="templates-2-chatgpt-work-prd-梳理模板" data-nav-heading>2. ChatGPT Work：PRD 梳理模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读需求澄清；确认关键项后在对话产出 PRD。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+请梳理【功能名称】的产品需求，生成可供 Codex/AI 实现的生产级 PRD。
+
+资料：
+- 原始 PRD：【路径/链接】
+- 正式 UI：【路径/链接】
+- 接口资料：【路径/链接】
+- 数据或历史方案：【路径/链接】
+
+资料优先级：
+【例如：正式 PRD &gt; 正式 UI &gt; 接口文档；演示原型只参考，不作为最终依据】
+
+工作方式：
+1. 先完整读取指定范围；
+2. 区分明确事实、合理推测、资料冲突、信息缺失和你的建议；
+3. 不把技术建议写成已经确认的业务规则；
+4. 对会改变业务结果的问题，按影响排序，一次只问我一个；
+5. 未确认前不要擅自选择；
+6. 每次收到我的回答后，更新“已确认/未确认”清单。
+
+最终 PRD 必须包括：
+- 背景、目标、用户与范围；
+- 非目标；
+- 名词和数据口径；
+- 完整用户流程和状态流转；
+- 业务规则、优先级和值域；
+- 正常、异常、空状态、权限和并发边界；
+- 页面与交互要求；
+- 接口/数据需求（只描述产品契约，不猜实现）；
+- 可逐条判断的验收标准；
+- 风险、依赖和明确不确定项。
+
+当前只做需求澄清，一次只问我一个问题。所有关键项确认后，默认在对话输出最终 PRD；准确保存路径和生成/保存文档指令已在本轮请求中给出时，按该授权仅保存文档，不重复询问。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+逐项核对资料覆盖、术语和值域、冲突裁决、异常边界和验收条件；不运行项目代码或测试。最终 PRD 仍在对话输出，未确认项不得写成产品规则。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="3. Codex：PRD 与代码一致性核验"><h3 id="templates-3-codex-prd-与代码一致性核验" data-nav-heading>3. Codex：PRD 与代码一致性核验</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读 PRD 与代码一致性核验。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+请将【AI执行版PRD路径】与当前仓库真实实现交叉核验。
+
+本轮只读，不修改代码或现有需求文档；核验报告仅按明确的文档保存授权落盘。
+
+要求：
+1. 先执行 git status，识别并保留已有用户修改；
+2. 找到涉及的入口、调用链、数据模型、接口、配置和测试；
+3. 对 PRD 每条核心规则标记：已支持 / 部分支持 / 未支持 / 无法从代码确认；
+4. 所有结论引用文件路径和必要行号；
+5. 区分代码事实、业务推测、技术建议；
+6. 列出 PRD 与代码的冲突、兼容风险和缺失验收条件；
+7. 会改变业务结果的问题一次只问我一个。
+
+输出：
+- 项目现状摘要；
+- PRD规则映射表；
+- 影响文件/模块；
+- 待确认问题；
+- 推荐下一步。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+以静态代码和指定资料逐条核验，引用准确位置；已有测试结果须注明来源、时间和覆盖范围。没有运行证据的项目标为未验证，不为核验默认运行测试。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="4. 方案讨论模板（Superpowers）"><h3 id="templates-4-方案讨论模板-superpowers" data-nav-heading>4. 方案讨论模板（Superpowers）</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读方案设计；在对话输出设计草案。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+@Superpowers 使用 brainstorming 为【任务名称】设计技术方案。
+
+依据：
+- 已确认需求：【路径】
+- 当前实现：【仓库/模块】
+- 已确认结论：【列出关键决定】
+
+请先只读检查真实代码，然后：
+1. 一次只问我一个仍会影响方案的问题；
+2. 问题澄清后提出 2-3 个可行方案；
+3. 分别说明数据流、调用链、修改范围、兼容性、异常处理、并发/事务、测试和风险；
+4. 给出推荐方案及明确依据；
+5. 明确非目标；
+6. 分段展示设计并等待我确认。
+
+方案默认在对话展示；已有准确路径与生成/保存设计文档的明确授权时，仅保存该文档，不修改代码或测试。方案确认后可进入实施计划讨论；方案确认本身不等于批准实施或保存文件。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+核对方案与已读实现、需求约束、兼容性、风险和非目标是否一致；只列建议验证命令，不执行命令；设计文档仅按明确保存授权落盘。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="5. 实施计划模板"><h3 id="templates-5-实施计划模板" data-nav-heading>5. 实施计划模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：实施计划草案；默认只在对话输出。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+方案已确认：【简述采用的方案】。
+
+使用 Superpowers writing-plans 生成实施计划草案，默认只在对话输出，本轮不修改实施文件、不执行计划中的命令。本轮请求已指定准确路径并要求生成或保存计划时，仅保存该计划，不重复询问；否则若 Skill 默认要求保存，先列准确路径并等待仅保存文档的授权，不因此创建规则文件。
+
+计划必须包含：
+1. 具体任务和执行顺序；
+2. 每项涉及的准确文件；
+3. 每项输入、输出和依赖；
+4. 按风险列出必要测试；需要测试驱动时，明确实施获准后才写失败测试，再做最小实现；
+5. 精确验证命令和预期结果；
+6. 多仓库时明确提供者/消费者顺序；
+7. 超出范围或失败时的停止条件；
+8. 最终验收标准映射和 Review 步骤。
+
+从计划中删除 git commit、push、任何 PR 变更、部署、发布、数据库执行和外部写入步骤。
+输出计划后停止，等待我明确确认。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+检查计划是否有准确文件、依赖顺序、验收映射、验证条件和停止点；计划里的命令只是待批准步骤，本轮不执行。没有对应保存授权时，不因 Skill 默认行为保存计划；不得提交 Git。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="6. 确认计划并开始实现"><h3 id="templates-6-确认计划并开始实现" data-nav-heading>6. 确认计划并开始实现</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：已授权的本地实施；先核对方案和计划的批准记录。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+已确认方案：【方案或会话批准记录】
+已确认实施与验证计划：【计划及准确文件范围/批准记录】
+批准方式：【分别批准；或符合小任务条件且已明确一次批准方案与计划的记录】
+
+以上批准范围内，开始实施；记录缺失或范围不清楚时先核对，不把本模板当成对未知方案的授权。
+
+执行规则：
+1. 严格按已确认计划和现有项目模式修改；
+2. 保留已有用户修改，禁止回滚无关文件；
+3. 对需要新增行为或回归保护的改动按计划采用测试驱动：先验证测试失败，再做最小实现，再验证通过；纯文档和低影响可逆修改不为复述实现新增测试；
+4. 只修改本需求直接相关内容，不做无关重构、升级依赖或全仓格式化；
+5. 遇到需求冲突、公共契约变化、新增表/依赖或超出范围时立即停止，一次只问我一个问题；
+6. 分阶段更新进度，不要等最后才汇报；
+7. 完成后运行相关验证并 Review 最终差异。
+
+禁止 commit、push、任何 PR 变更、部署、发布、连接或写入数据库，以及外部系统写入。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。然后按已批准计划运行必要的格式检查、编译、精确测试与相关回归，Review 最终差异。报告实际命令、执行目录、退出码、范围、未验证项和剩余风险，不重复扩大测试范围。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="7. 新功能完整模板"><h3 id="templates-7-新功能完整模板" data-nav-heading>7. 新功能完整模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：分阶段工作：只读澄清与设计 → 批准方案和计划 → 本地实施。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+@Superpowers 在当前项目实现【功能名称】。
+
+业务目标：
+【用户要获得什么结果】
+
+需求：
+- 【需求1】
+- 【需求2】
+
+范围：
+- 允许：【目录/模块】
+- 禁止：【目录/接口/数据结构】
+
+非目标：
+- 【本次明确不做】
+
+兼容要求：
+- 【旧客户端、RPC/HTTP、数据库、配置等】
+
+验收标准：
+- Given【前置条件】When【操作】Then【结果】
+- Given【异常条件】When【操作】Then【结果】
+
+默认按以下阶段工作；只有执行约定中的小任务，才可由我明确合并批准方案与计划：
+1. brainstorming：只读代码，一次只问一个问题，输出并让我确认设计；
+2. writing-plans：设计确认后在对话输出实施与验证计划，等待我确认；
+3. 实施：按计划选择必要的 test-driven-development 或相关验证，计划确认后才修改业务代码和测试；
+4. verification-before-completion：仅在实施阶段运行必要且安全的相关验证；
+5. review：检查未提交差异、回归和缺失测试。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。批准前只核对资料与方案；批准后按风险执行与新行为直接相关的测试和回归，Review 差异并逐条映射验收标准。报告实际命令、结果、未验证项和风险。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="8. Bug 修复完整模板"><h3 id="templates-8-bug-修复完整模板" data-nav-heading>8. Bug 修复完整模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：分阶段工作：只读诊断 → 批准方案和计划 → 本地修复。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+@Superpowers 使用 systematic-debugging 排查【Bug名称】。
+
+实际现象：
+【发生了什么】
+
+预期行为：
+【正确行为】
+
+复现步骤：
+1. 【步骤】
+2. 【步骤】
+
+环境和频率：
+- 环境：【仅描述本地/测试等发生环境；不授权访问该环境，不提供真实密钥】
+- 频率：【必现/偶发比例】
+- 版本：【分支/构建版本】
+
+证据：
+- 日志：【脱敏内容或路径】
+- 请求/输入：【脱敏内容】
+- 最近相关修改：【说明】
+
+要求：
+1. 先只读分析日志、代码和已有复现证据，不要看到报错就修改；运行现有复现命令前也要审查副作用；
+2. 区分症状、触发条件和根因，每次只验证一个根因假设；
+3. 根因证据充分后，在对话输出最小修复方案，等待我确认；
+4. 方案确认后输出准确文件范围、回归用例和实施与验证计划，再等待我确认；符合小任务条件时只能按执行约定明确合并批准；
+5. 实施获准后才新增回归测试或插桩，先确认测试在修复前因目标 Bug 失败，再做最小修复；
+6. 重新运行安全的原复现、回归测试和相关测试；不能复现或无法安全运行时明确说明；
+7. 不用吞错、无界重试或扩大超时掩盖问题。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。诊断阶段不写新测试或插桩；批准后新增必要回归测试，验证失败原因与目标 Bug 一致，再最小修复并重跑原场景和相关回归。不能复现时明确记录，不虚构根因或失败证据。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="9. 重构完整模板"><h3 id="templates-9-重构完整模板" data-nav-heading>9. 重构完整模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：分阶段工作：只读重构分析 → 批准方案和计划 → 本地重构。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+@Superpowers 重构【模块/文件】。
+
+当前问题：
+- 【重复、耦合、复杂度、职责混乱等证据】
+
+目标：
+- 【希望改善的可维护性指标】
+
+必须保持不变：
+- 公共接口、请求响应和错误语义；
+- 业务规则、数据结果和权限；
+- 事务、并发和幂等行为；
+- 【其他契约】
+
+允许范围：【目录/文件】
+禁止范围：【目录/文件】
+非目标：不新增功能，不升级无关依赖，不修改数据库。
+
+请先只读分析调用者、依赖和现有测试；如果保护不足，先规划特征测试。
+先在对话给出重构方案并等待确认，再输出小步实施与验证计划并等待确认；批准前不写特征测试或调试代码。符合小任务条件时，只能按执行约定明确合并批准。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。批准后用必要的特征测试、相关回归和差异审查核对约定的可观察行为；测试未覆盖的行为列为风险，不凭编译成功宣称行为完全不变。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="10. 性能优化完整模板"><h3 id="templates-10-性能优化完整模板" data-nav-heading>10. 性能优化完整模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：分阶段工作：安全基线与诊断 → 批准方案和计划 → 本地优化。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+@Superpowers 使用 systematic-debugging 分析并优化【接口/任务/模块】。
+
+固定测试条件：
+- 环境：【机器/容器/依赖版本】
+- 数据规模：【数量和分布】
+- 负载模型：【并发、持续时间、请求比例】
+- 测量工具：【benchmark/profile/trace/用户提供的执行计划】
+
+当前基线：
+- P50：【】
+- P95：【】
+- P99：【】
+- QPS/吞吐：【】
+- 错误率：【】
+- CPU/内存：【】
+
+目标指标：【】
+
+必须保持：业务结果、接口契约、数据一致性、事务语义和权限规则。
+
+要求：
+1. 先检查既有基线、已有 benchmark/profile/trace 的代码和运行环境，只有排除副作用后才验证本地基线是否可重复；
+2. 用 profile、trace、用户提供的执行计划或指标证明瓶颈；如需 EXPLAIN，只生成语句供人工执行并分析返回结果，AI 不连接数据库；
+3. 一次只验证一个性能假设；
+4. 在对话输出最小优化方案和代价，等待我确认；再输出准确文件范围与实施和验证计划，等待我确认；
+5. 获准后才修改代码或新增测量程序，并在相同条件下复测；
+6. 同时报告尾延迟、错误率和资源消耗；
+7. 运行正确性回归；没有数据时不得宣称提升。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。基线只用已有且安全的本地 benchmark/profile/trace；新增测量代码需先批准。优化后在相同条件下复测，并核对正确性回归；报告原始条件、前后数据及未覆盖场景，没有数据不宣称提升。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="11. 多仓库变更模板"><h3 id="templates-11-多仓库变更模板" data-nav-heading>11. 多仓库变更模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读多仓库影响分析；本轮不实施。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+这是跨仓库任务，本轮只读分析；除已有明确授权的分析文档保存外，不修改文件，不运行测试、联调或服务。
+
+业务目标：【】
+已确认需求：【路径/摘要】
+
+仓库：
+- 【repo-a绝对路径】：【职责】
+- 【repo-b绝对路径】：【职责】
+- 【repo-c绝对路径】：【职责】
+
+请先分别检查每个仓库的根目录、分支、已有修改、Go版本和测试入口，然后输出：
+1. 仓库职责、数据所有权和依赖方向；
+2. 涉及的 HTTP/RPC/消息/表契约；
+3. 向前和向后兼容策略；
+4. 推荐修改顺序和原因；
+5. 每个仓库独立的修改范围与验证方式；
+6. 跨仓联调步骤（只生成步骤，不连接或写入数据库，不执行外部写入）；
+7. 不可访问或无法确认的信息。
+
+不要让多个代理同时修改同一个文件；不要猜测未读取仓库的实现。
+一次只问我一个会改变方案的问题。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+逐仓核对职责、调用方向、契约、已有修改和证据位置；无法访问的仓库明确列出。本轮不运行测试、联调或服务，只提出后续每仓的验证计划。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="12. MySQL 表/SQL 设计模板"><h3 id="templates-12-mysql-表-sql-设计模板" data-nav-heading>12. MySQL 表/SQL 设计模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读 SQL 设计；草案默认对话输出，文件保存单独授权。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+根据【PRD/TRD路径】设计 MySQL【表结构/增量SQL】。
+
+数据库版本：【】
+现有表结构：【路径】
+命名规范：【】
+数据量与主要查询：【】
+允许新增表：【是/否；否时不可擅自新增】
+
+本轮先只读分析：
+1. 将每条业务规则映射到字段、约束、索引或代码规则；
+2. 区分数据库必须保证和应用层保证的规则；
+3. 检查主键、唯一性、普通索引、NULL、默认值、金额精度、时间和逻辑删除；
+4. 分析事务、并发、锁顺序、幂等和兼容性；
+5. 列出缺失或冲突，一次只问我一个关键问题。
+
+关键规则确认后默认在对话生成 SQL 草案；需要 SQL 文件时须有准确路径与仅保存该产物的明确授权，本轮请求已具备时不重复询问；未具备时先列准确路径等待授权。不修改应用代码或测试。同时提供：
+- 表关系说明；
+- 执行前预检 SQL；
+- 影响和锁风险；
+- 幂等/重复执行说明；
+- 回滚或恢复方案；
+- 人工执行顺序。
+
+禁止连接或写入任何数据库。DROP、TRUNCATE、DELETE、UPDATE、大表DDL必须单独标为高风险，不得执行。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+只做 SQL 和设计的静态核对，检查规则映射、版本兼容、索引、锁风险、重复执行和恢复说明；不连接数据库，不执行预检 SQL、EXPLAIN 或任何数据库语句。不把静态分析写成数据库实测结论。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="13. API/Postman 本地验证模板"><h3 id="templates-13-api-postman-本地验证模板" data-nav-heading>13. API/Postman 本地验证模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：本地 API 验证；在已授权的具体地址和用例范围内发送安全只读请求，文件修改另行授权。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+验证【接口名称】。
+
+接口依据：【OpenAPI/api.md/代码路径】
+本地地址：【127.0.0.1:端口】
+鉴权：【只说明变量名，不粘贴真实Token】
+
+请先判断是否需要 Postman/API 测试能力，并说明原因。
+只允许请求已确认无副作用的本地纯只读接口或已有安全 mock；不能仅凭 GET、127.0.0.1 或 mock 名称判断安全。先检查本地处理链及初始化逻辑不会连接数据库、队列或外部 API，不会使用真实凭据或改变外部状态。写操作、文件上传、外部域名请求和凭据传输一律不执行，只生成请求示例与人工验证步骤。
+
+要求：
+1. 核对请求方法、路径、Header、参数和响应契约；
+2. 设计正常、缺参、非法值、无权限和边界用例；
+3. 识别会改变状态的请求，并明确标为“禁止发送”；
+4. 发送前列出具体方法、地址、用例及副作用审查结果；若本轮已明确授权该本地验证范围，不重复确认，范围不明或变化时先询问；不自动启动服务或创建 mock/集合文件；
+5. 执行后报告原始状态码、关键响应、断言和失败原因。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。只有已确认的本地纯只读请求或安全 mock 可发送。报告实际方法、地址、状态码、脱敏关键响应和断言；未发送的用例标为未验证，不能用请求示例冒充实测。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="14. OpenSpec 提案模板"><h3 id="templates-14-openspec-提案模板" data-nav-heading>14. OpenSpec 提案模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：OpenSpec 提案草案；默认对话输出，规格文件保存单独授权。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+先在对话为【change-name，英文短横线命名】起草 OpenSpec 变更提案；本轮默认不调用会落盘的 openspec-propose。
+
+输入：
+- 已确认PRD：【路径】
+- 已确认技术设计：【路径/本会话结论】
+- 涉及仓库/模块：【】
+
+要求：
+1. 只写已确认需求，不自行扩展；
+2. 明确目标、非目标、行为差异、兼容性、风险和验收标准；
+3. tasks 每项可独立验证，包含测试；
+4. 展示草案和拟保存的准确路径；没有对应保存授权时不创建或修改文件，不自动初始化项目；
+5. 只有我明确授权仅保存这些规格文件后，才调用 openspec-propose；本轮请求已给准确路径和生成/保存指令时视为已授权，不重复询问。保存后按本机帮助支持的用法运行 openspec validate，并报告结果；这不授权业务代码、测试或实施步骤；
+6. 提案有歧义时一次只问我一个问题。
+
+禁止 commit、push、任何 PR 变更、归档和发布。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+对话草案只核对目标、范围、规则与验收映射；获准保存后仅执行本机帮助所支持的 OpenSpec 本地规格校验，并报告实际命令、结果和文件变化。规格校验不证明代码实现、测试或业务行为通过。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="15. OpenSpec 实施模板"><h3 id="templates-15-openspec-实施模板" data-nav-heading>15. OpenSpec 实施模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：分阶段工作：只读规格核对 → 核对方案和计划批准 → 本地实施。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+准备使用 openspec-apply-change 实施【change-name】；本轮先只读核对，不因调用 Skill 自动实施。
+
+开始前：
+1. 读取 proposal/spec/design/tasks；
+2. 检查工作区已有修改；
+3. 将规格映射到具体文件和测试；
+4. 核对技术方案是否已明确批准；没有则先在对话输出并等待确认；
+5. 方案已确认后，输出准确文件范围、实施顺序与测试计划，等待我确认；已有批准记录则核对其范围，不重复要求相同批准；
+6. 明确实施文件和本地 tasks 进度更新的范围，不因工具默认行为初始化、归档或新建规则文件。
+
+方案和实施计划均已明确批准后，再使用 openspec-apply-change：
+- 按任务风险选择必要测试，需要测试驱动的行为先验证失败再实现；
+- 只实施规格内范围；
+- 完成一项更新一次进度；
+- 遇到规格与代码冲突时停止询问；
+- 最后使用 openspec-verify-change 和 verification-before-completion 核验。
+
+禁止 commit、push、任何 PR 变更、archive、部署、发布、连接或写入数据库，以及外部写入。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。实施获准后将每条规格映射到代码与相关本地测试，完成必要回归和差异审查；报告实际命令、结果、未验证项及风险。规格校验通过不等于实现通过。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="16. 本地 Review 模板"><h3 id="templates-16-本地-review-模板" data-nav-heading>16. 本地 Review 模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：只读本地 Review；不修复、不格式化文件。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+Review 当前工作区的所有未提交修改，包括未跟踪文件。本轮不修改被审查文件、不自动修复问题，也不默认运行代码或测试；Review 报告仅按明确的文档保存授权落盘。
+
+审查依据：
+- 已确认需求：【路径/摘要】
+- 已确认方案：【路径/摘要】
+- 验收标准：【列表】
+
+重点：
+1. 功能错误、行为回归和遗漏分支；
+2. HTTP/RPC/数据库兼容性；
+3. 并发、事务、幂等、超时和错误处理；
+4. 安全、权限和敏感数据；
+5. 测试是否真正覆盖验收标准；
+6. 是否混入无关修改或覆盖用户修改；
+7. 未运行/无法运行的验证。
+
+严重度口径：
+- P0：数据丢失、安全事故、核心服务不可用等灾难性问题，立即报告并停止交付，提出修复方向；
+- P1：核心功能错误、明显回归或公共契约破坏，报告为本次本地交付前需修复；本轮 Review 不实施修复；
+- P2：非阻断问题、可维护性问题或测试缺口，可记录后续处理，但必须说明风险和建议。
+
+输出顺序：
+- 先列问题，按 P0/P1/P2 排序；
+- 每项引用文件和准确位置，说明触发条件、影响和修复方向；
+- 再列开放问题和假设；
+- 最后给简短变更摘要和测试缺口。
+
+如果没有发现问题，说明“在本次审查范围和现有证据下未发现问题”，同时说明剩余风险，不能为了输出而虚构问题。测试通过不证明所有场景无竞态，也不证明数据库事务语义正确。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+默认静态审查与核对已有验证证据，不新增测试、格式化或运行代码。认为需要动态检查时先列具体命令、理由和副作用，另获验证授权后再执行；没有发现问题仍要说明范围、证据缺口和风险。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="17. 完成前验证模板"><h3 id="templates-17-完成前验证模板" data-nav-heading>17. 完成前验证模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：已明确请求的本地验证；不修改源文件、测试或规格。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+使用 verification-before-completion 做最终验证。
+
+请先只读检查测试入口、初始化代码、脱敏配置和环境变量名，排除数据库、队列、外部 API、测试/生产环境、真实凭据和其他副作用；无法排除时不执行，只能选已有且安全的 mock/单元测试，或提供人工步骤。新增 mock/测试仍需另行实施授权。然后按改动类型选择必要的安全命令，不使用旧输出宣称本轮新验证；纯文档改动只做文档检查，不跑代码：
+- 代码格式符合约定（只检查，例如 gofmt -l，不自动使用 gofmt -w）及按需编译；
+- 相关静态检查通过；
+- 精确测试和相关包测试通过；
+- 每条验收标准有对应证据，缺失则列为未验证；
+- 审查最终差异是否混入无关修改。
+
+局部测试或 -race 通过仅覆盖本次运行场景；不得概括为“无竞态/事务问题”，数据库事务与跨服务行为未经实测时必须明确未验证。
+
+报告格式：
+1. 命令；
+2. 执行目录和范围；
+3. 退出码和关键输出；
+4. 证明了什么；
+5. 没有证明什么；
+6. 未验证项及原因。
+
+最后再次确认：未 commit、未 push、未进行任何 PR 变更、未部署、未发布、未连接或写入数据库、未改变外部系统。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+先只读检查测试入口、初始化代码、脱敏配置和环境变量名；可能访问数据库、队列、外部 API、测试/生产环境、真实凭据或改变外部状态时不执行。只有已有且安全的 mock/单元测试可作替代；新增替代测试仍需实施授权。不自行下载依赖或 toolchain、安装工具或启动服务；Go 等工具可能联网、写缓存或校验文件，不能把 go list 或 -mod=readonly 当作零副作用保证；先限制自动下载并核对模块文件变化风险，无法避免未授权的模块/校验文件修改时不执行。仅运行本次结论所需且已审查的命令，检查格式时不使用 gofmt -w 或其他修复命令；失败只报告证据和修复建议，不擅自改文件。报告实际命令、目录、退出码、覆盖范围和未验证项。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="18. 会话中断/换会话交接模板"><h3 id="templates-18-会话中断-换会话交接模板" data-nav-heading>18. 会话中断/换会话交接模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：交接整理；只汇总本会话已有记录，不新增诊断或代码执行，文档保存按明确授权。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮根据本会话记录复述已经实际读到的规则来源、适用目录和关键约束；未读或无法核实的来源明确列出，不新增读取命令，不为补规则创建 AGENTS.md 等规则文件。
+
+请在对话生成一份可供新 Codex 会话继续工作的交接摘要。只整理已有记录；除已有明确授权的交接文档保存外，不修改文件，不新增命令、请求、测试、构建或格式化执行。
+
+必须包括：
+- 最终目标和非目标；
+- 已确认事实与决定；
+- 仍未确认的问题；
+- 仓库、分支和工作目录；
+- 已有用户修改；
+- 本轮修改文件和具体行为；
+- 计划任务完成状态；
+- 已执行命令与结果；
+- 当前失败或阻塞证据；
+- 下一步唯一建议动作；
+- 安全边界：不 commit、不 push、不进行任何 PR 变更、不部署、不发布、不连接或写入数据库、不改变外部系统。
+
+不要省略失败信息，不要把推测写成事实。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+只整理已有命令、运行时间、目录、退出码和覆盖范围；没有记录就写未执行或未核实。不重新运行测试、构建、格式化或其他命令，不把历史通过写成本轮新验证。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="19. 让 Codex 自动选择插件模板"><h3 id="templates-19-让-codex-自动选择插件模板" data-nav-heading>19. 让 Codex 自动选择插件模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：插件与能力选择；不执行所选业务能力。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮先复述已经实际读到的规则来源、适用目录和关键约束；未读或无法访问的来源明确列出，不假装已读，不为补规则创建 AGENTS.md 等规则文件。
+
+完成【任务】需要读取【资料类型/系统】并产出【结果】。
+
+请先检查当前可用的插件、Skills 和专用能力，只选择必要能力，并告诉我：
+1. 选择什么能力；
+2. 每项用于什么；
+3. 是否会访问网络或外部系统；
+4. 哪些动作只读；
+5. 哪些动作会写入、发送、上传或改变状态；这些动作在本任务中禁止执行，只能生成操作说明。
+
+本轮只选择并解释能力，不执行所选业务能力，不安装、登录、发送请求或创建业务产物；能力选择说明仅按明确的文档保存授权落盘。选择能力不构成业务执行授权。不要因为插件可用就扩大任务范围。无法使用专用能力时说明限制，并在对话提出最小替代方案。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+核对能力是否实际可用、权限与读写属性；不可用时说明限制。本轮不安装插件、不验证业务接口、不发送请求，也不为选择能力重新运行项目测试。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="20. 紧急停止猜测模板"><h3 id="templates-20-紧急停止猜测模板" data-nav-heading>20. 紧急停止猜测模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：暂停执行与证据整理；只提出实验，不运行。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮根据本会话记录复述已经实际读到的规则来源、适用目录和关键约束；未读或无法核实的来源明确列出，不新增读取命令，不为补规则创建 AGENTS.md 等规则文件。
+
+暂停当前修改，不要继续尝试。
+
+请：
+1. 整理已经出现的证据，默认在对话输出；证据文档仅按本轮已有的准确路径与生成/保存授权落盘；
+2. 列出已修改文件，但不要回滚用户修改；
+3. 区分已确认事实、假设、环境问题、既有问题和本次回归；
+4. 只提出一个最小、只读或可安全恢复的验证实验，说明目的、步骤、副作用和预期观察，本轮不执行；
+5. 一次只问我一个最关键的问题。
+
+保持暂停：除本轮已有明确授权的证据文档保存外，不新增、修改、删除或回滚文件，不新增调试脚本，不继续运行实验。后续如需恢复，先核对根因或需求，并按执行约定取得对应授权。
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+只复述已有证据、文件变化、失败与假设，列出建议实验的目的、命令、风险及预期观察；不实际运行实验或重跑测试，不新增调试脚本。缺失证据按缺失报告。</code></pre></div>
+</div></details></section>
+<section class="chapter source-chapter" data-search-item data-source="templates" data-title="21. 最终交付报告模板"><h3 id="templates-21-最终交付报告模板" data-nav-heading>21. 最终交付报告模板</h3><details class="template-details"><summary>展开模板内容</summary><div class="template-content">
+<div class="code-block prose-code" data-language="text"><div class="code-toolbar" data-ui="true"><span>text</span><button class="copy-btn" type="button" data-copy-code aria-label="复制代码块">复制</button></div><pre><code>本轮任务分类：交付报告整理；只汇总已有证据，不新增诊断或代码执行，文档保存按明确授权。
+规则来源（仅填写现有资料）：【本轮用户要求；现有 README、PRD、团队规范、已确认方案的准确路径；没有则填无】
+首轮根据本会话记录复述已经实际读到的规则来源、适用目录和关键约束；未读或无法核实的来源明确列出，不新增读取命令，不为补规则创建 AGENTS.md 等规则文件。
+
+只根据本会话已有记录，按以下格式汇报本地交付结果，默认在对话输出；本轮已有准确路径与生成/保存报告指令时，仅保存该报告，不重复询问。不为补报告重跑命令或修改实施文件。
+
+结果摘要：
+【完成/部分完成/阻塞】
+
+修改文件：
+- 【文件】：【变化】
+
+验收标准映射：
+- 【标准】：【代码/测试证据】
+
+验证证据：
+- 命令：【已实际执行的命令；没有则写未执行】
+  时间与执行目录：【】
+  结果：【有记录的退出码、通过/失败数量、关键输出；记录缺失写未核实】
+  范围：【证明什么，不证明什么】
+
+未验证项：
+- 【内容和原因】
+
+剩余风险：
+- 【风险、触发条件、建议】
+
+工作区状态：
+- 已有用户修改：【】
+- 本次未跟踪文件：【】
+- 本轮 Git 操作：【按已有记录填写；应为未 commit、未 push、未进行任何 PR 变更；无法核实时写未核实】
+- 本轮发布操作：【按已有记录填写；应为未部署、未发布；无法核实时写未核实】
+- 本轮外部操作：【按已有记录填写；应为未连接或写入数据库、未调用有副作用接口、未修改外部系统；无法核实时写未核实】
+
+执行约定：
+- 修改业务代码、测试、调试脚本或其他实施文件前，默认先确认方案，再单独确认实施与验证计划。仅对单仓局部可逆、需求无歧义，且不改变公共契约、表结构、依赖、权限、安全或事务语义的小任务，可同时展示短方案、准确文件范围、非目标和验证计划，由我明确一次批准方案与计划；不得自行省略确认。已有批准在其范围内持续有效，不重复请求相同确认；范围或条件改变时再核对。
+- 文档草案默认只在对话输出；若本轮请求已给出准确保存路径，并明确要求生成或保存该文档，即视为“仅保存这些文档”的授权，不重复询问。未具备此授权时，先列准确路径再等待明确授权。此授权不包括代码、测试、调试脚本或新增代码执行，也不代表批准实施；只读分析、交接或报告任务的文档保存不扩张为实施任务。
+- 不创建 AGENTS.md 等规则文件；保留已有用户修改，不覆盖、回滚或删除；发现资料冲突、需求缺失、范围越界或会改变业务结果的假设时停止，一次只问我一个关键问题。
+- 外部系统只允许本任务明确提供或授权的只读资料读取；不得连接或写入任何数据库，不得执行外部写入、发送、上传、删除或状态变更；即使我确认，也只能生成脚本、风险说明和人工步骤。
+- 不执行 git commit、git push，不创建、编辑、评论、审批、合并、关闭、重开或进行其他 PR 变更；不部署、不发布、不修改线上配置，不使用或输出真实密码、Token、Cookie、生产 DSN 和敏感数据。
+- 结论须对应本轮实际证据；未读取、未执行、未验证或证据已失效时明确说明，并报告剩余风险。不把局部测试通过概括为所有场景无竞态或无事务问题。
+
+本轮验证与交付：
+只引用本会话已执行的验证，注明命令、时间、执行目录、结果与范围；未运行、记录不足或后续改动可能使旧结果失效时明确写出。不为填写报告重新运行测试或其他命令，也不从缺少报错推断通过。</code></pre></div>
+</div></details></section>
+</section>
+
+      <footer class="footer">
+        <p>离线手册生成日期：2026-10-20。客户端菜单、Slash 命令和 Skill 名称可能变化，实际使用以当前客户端补全、插件页和 <code>--help</code> 为准。</p>
+      </footer>
+    </main>
+  </div>
+
+  <div id="copyStatus" role="status" aria-live="polite" class="skip-link" aria-hidden="true"></div>
+  <script>
+    (function () {
+      'use strict';
+
+      var searchInput = document.getElementById('handbookSearch');
+      var clearButton = document.getElementById('clearSearch');
+      var resetButton = document.getElementById('resetSearch');
+      var resultCount = document.getElementById('resultCount');
+      var noResults = document.getElementById('noResults');
+      var chapters = Array.from(document.querySelectorAll('[data-search-item]'));
+      var filterButtons = Array.from(document.querySelectorAll('[data-filter]'));
+      var activeFilter = 'all';
+      var searchActive = false;
+      var printState = null;
+
+      document.querySelectorAll('.code-block').forEach(function (block) {
+        var language = block.querySelector('.code-toolbar > span');
+        if (language && language.textContent.trim() === 'text') block.classList.add('prose-code');
+      });
+
+      var documentTargets = {
+        'Codex个人研发全流程实战教程.md': 'source-tutorial-title',
+        'Codex个人研发快速操作清单.md': 'source-checklist-title',
+        'Codex个人研发提示词模板.md': 'source-templates-title',
+        'Codex个人研发手册.html': 'handbook-title'
+      };
+      document.querySelectorAll('.source-group a[href]').forEach(function (link) {
+        var fileName = link.getAttribute('href').split(/[?#]/)[0].replace(/^\.\//, '');
+        try { fileName = decodeURIComponent(fileName); } catch (error) { return; }
+        if (Object.prototype.hasOwnProperty.call(documentTargets, fileName)) {
+          link.setAttribute('href', '#' + documentTargets[fileName]);
+        }
+      });
+
+      var taskStorageKey = 'codex-handbook-task-checks-v1';
+      var taskState = {};
+      try {
+        var savedTasks = JSON.parse(localStorage.getItem(taskStorageKey) || '{}');
+        if (savedTasks && typeof savedTasks === 'object' && !Array.isArray(savedTasks)) taskState = savedTasks;
+      } catch (error) { /* Checklist progress also works without storage. */ }
+      var taskCheckboxes = Array.from(document.querySelectorAll('.source-group .task-item input[type="checkbox"]'));
+      var usedTaskIds = {};
+      function taskHash(value) {
+        var hash = 2166136261;
+        for (var index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
+        return (hash >>> 0).toString(36);
+      }
+      function updateTaskProgress() {
+        var completed = taskCheckboxes.filter(function (checkbox) { return checkbox.checked; }).length;
+        document.getElementById('checklistProgress').textContent = '已勾选 ' + completed + ' / ' + taskCheckboxes.length + ' 项';
+        document.getElementById('resetChecklist').disabled = completed === 0;
+      }
+      function saveTaskProgress() {
+        try { localStorage.setItem(taskStorageKey, JSON.stringify(taskState)); } catch (error) { /* Storage is optional. */ }
+      }
+      taskCheckboxes.forEach(function (checkbox) {
+        var item = checkbox.closest('.task-item');
+        var chapter = checkbox.closest('[data-search-item]');
+        var heading = chapter ? chapter.querySelector('[data-nav-heading]') : null;
+        var description = item.querySelector('label') || checkbox.nextElementSibling;
+        var text = description ? description.textContent.replace(/\s+/g, ' ').trim() : item.textContent.trim();
+        var identity = (chapter ? chapter.dataset.source : '') + '\n' + (heading ? heading.id : '') + '\n' + text;
+        var baseId = 'task-' + taskHash(identity);
+        usedTaskIds[baseId] = (usedTaskIds[baseId] || 0) + 1;
+        var taskId = baseId + (usedTaskIds[baseId] > 1 ? '-' + usedTaskIds[baseId] : '');
+        checkbox.id = taskId;
+        checkbox.disabled = false;
+        checkbox.removeAttribute('tabindex');
+        checkbox.removeAttribute('aria-hidden');
+        if (description && description.tagName === 'LABEL') {
+          description.htmlFor = taskId;
+        } else {
+          var label = document.createElement('label');
+          label.htmlFor = taskId;
+          if (description) {
+            description.replaceWith(label);
+            label.append(description);
+          } else {
+            label.textContent = text;
+            item.append(label);
+          }
+        }
+        checkbox.checked = taskState[taskId] === true;
+        checkbox.addEventListener('change', function () {
+          if (checkbox.checked) taskState[taskId] = true;
+          else delete taskState[taskId];
+          saveTaskProgress();
+          updateTaskProgress();
+        });
+      });
+      document.getElementById('resetChecklist').addEventListener('click', function () {
+        taskState = {};
+        taskCheckboxes.forEach(function (checkbox) { checkbox.checked = false; });
+        try { localStorage.removeItem(taskStorageKey); } catch (error) { /* Storage is optional. */ }
+        updateTaskProgress();
+      });
+      updateTaskProgress();
+
+      function contentText(element) {
+        var clone = element.cloneNode(true);
+        clone.querySelectorAll('[data-ui]').forEach(function (node) { node.remove(); });
+        return clone.textContent.replace(/\s+/g, ' ').trim();
+      }
+
+      chapters.forEach(function (chapter) {
+        chapter.dataset.searchText = contentText(chapter).toLocaleLowerCase('zh-CN');
+      });
+
+      function removeMarks() {
+        var parents = new Set();
+        document.querySelectorAll('mark[data-search-mark]').forEach(function (mark) {
+          parents.add(mark.parentNode);
+          mark.replaceWith(document.createTextNode(mark.textContent));
+        });
+        parents.forEach(function (parent) { parent.normalize(); });
+      }
+
+      function shouldSkipTextNode(node) {
+        var parent = node.parentElement;
+        return !parent || Boolean(parent.closest('[data-ui], script, style, button, input, textarea, select'));
+      }
+
+      function highlight(element, query) {
+        var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        var nodes = [];
+        var node;
+        while ((node = walker.nextNode())) {
+          if (!shouldSkipTextNode(node) && node.nodeValue.toLocaleLowerCase('zh-CN').includes(query)) nodes.push(node);
+        }
+        nodes.forEach(function (textNode) {
+          var original = textNode.nodeValue;
+          var lower = original.toLocaleLowerCase('zh-CN');
+          var fragment = document.createDocumentFragment();
+          var cursor = 0;
+          var at = lower.indexOf(query, cursor);
+          while (at !== -1) {
+            if (at > cursor) fragment.append(document.createTextNode(original.slice(cursor, at)));
+            var mark = document.createElement('mark');
+            mark.dataset.searchMark = 'true';
+            mark.textContent = original.slice(at, at + query.length);
+            fragment.append(mark);
+            cursor = at + query.length;
+            at = lower.indexOf(query, cursor);
+          }
+          if (cursor < original.length) fragment.append(document.createTextNode(original.slice(cursor)));
+          textNode.replaceWith(fragment);
+        });
+      }
+
+      function updateDetailsForSearch(query) {
+        var details = document.querySelectorAll('.template-details');
+        if (query && !searchActive) {
+          details.forEach(function (item) { item.dataset.openBeforeSearch = item.open ? 'true' : 'false'; });
+          searchActive = true;
+        }
+        if (query) {
+          details.forEach(function (item) {
+            var chapter = item.closest('[data-search-item]');
+            item.open = chapter ? chapter.dataset.searchText.includes(query) : item.textContent.toLocaleLowerCase('zh-CN').includes(query);
+          });
+        } else if (searchActive) {
+          details.forEach(function (item) {
+            item.open = item.dataset.openBeforeSearch === 'true';
+            delete item.dataset.openBeforeSearch;
+          });
+          searchActive = false;
+        }
+      }
+
+      function applySearch() {
+        removeMarks();
+        var query = searchInput.value.trim().toLocaleLowerCase('zh-CN');
+        updateDetailsForSearch(query);
+        var visibleChapters = 0;
+        chapters.forEach(function (chapter) {
+          var inFilter = activeFilter === 'all' || chapter.dataset.source === activeFilter;
+          var matches = !query || chapter.dataset.searchText.includes(query);
+          chapter.hidden = !(inFilter && matches);
+          if (!chapter.hidden) {
+            visibleChapters += 1;
+            if (query) highlight(chapter, query);
+          }
+        });
+        var hits = document.querySelectorAll('mark[data-search-mark]').length;
+        clearButton.hidden = !query;
+        noResults.hidden = visibleChapters !== 0;
+        if (query) {
+          resultCount.textContent = '命中 ' + hits + ' 处 · ' + visibleChapters + ' 个章节';
+        } else {
+          resultCount.textContent = '显示 ' + visibleChapters + ' 个章节';
+        }
+        updateTocVisibility();
+      }
+
+      function setFilter(filter) {
+        activeFilter = filter;
+        filterButtons.forEach(function (button) {
+          button.setAttribute('aria-pressed', button.dataset.filter === filter ? 'true' : 'false');
+        });
+        applySearch();
+      }
+
+      function revealHashTarget(hash) {
+        if (!hash || hash.length < 2) return null;
+        var id;
+        try { id = decodeURIComponent(hash.slice(1)); } catch (error) { return null; }
+        var target = document.getElementById(id);
+        if (!target) return null;
+        if (target.classList.contains('source-group')) target = target.querySelector('[data-nav-heading]') || target;
+        var chapter = target.closest('[data-search-item]');
+        if (chapter && chapter.hidden) {
+          searchInput.value = '';
+          setFilter('all');
+        }
+        var ancestor = target;
+        while (ancestor) {
+          if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+          ancestor = ancestor.parentElement;
+        }
+        if (chapter) chapter.querySelectorAll('.template-details').forEach(function (details) { details.open = true; });
+        return target;
+      }
+      document.addEventListener('click', function (event) {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        var link = event.target.closest('a[href^="#"]');
+        if (link) revealHashTarget(link.getAttribute('href'));
+      });
+      window.addEventListener('hashchange', function () {
+        var target = revealHashTarget(window.location.hash);
+        if (target) target.scrollIntoView({ block: 'start' });
+      });
+
+      searchInput.addEventListener('input', applySearch);
+      clearButton.addEventListener('click', function () {
+        searchInput.value = '';
+        applySearch();
+        searchInput.focus();
+      });
+      resetButton.addEventListener('click', function () {
+        searchInput.value = '';
+        setFilter('all');
+        searchInput.focus();
+      });
+      filterButtons.forEach(function (button) {
+        button.addEventListener('click', function () { setFilter(button.dataset.filter); });
+      });
+
+      var toc = document.getElementById('toc');
+      var headings = Array.from(document.querySelectorAll('[data-nav-heading]'));
+      headings.forEach(function (heading, headingIndex) {
+        if (!heading.id) heading.id = 'section-' + String(headingIndex + 1);
+        var item = document.createElement('li');
+        var link = document.createElement('a');
+        link.href = '#' + heading.id;
+        link.textContent = heading.textContent;
+        link.dataset.target = heading.id;
+        link.dataset.level = String(Number(heading.tagName.slice(1)));
+        item.append(link);
+        toc.append(item);
+      });
+
+      function updateTocVisibility() {
+        toc.querySelectorAll('a').forEach(function (link) {
+          var heading = document.getElementById(link.dataset.target);
+          var chapter = heading ? heading.closest('[data-search-item]') : null;
+          link.parentElement.hidden = !heading || Boolean(chapter && chapter.hidden);
+        });
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            toc.querySelectorAll('a').forEach(function (link) { link.removeAttribute('aria-current'); });
+            var active = toc.querySelector('a[data-target="' + CSS.escape(entry.target.id) + '"]');
+            if (active) active.setAttribute('aria-current', 'location');
+          });
+        }, { rootMargin: '-18% 0px -72% 0px', threshold: 0 });
+        headings.forEach(function (heading) { observer.observe(heading); });
+      }
+
+      var menuToggle = document.getElementById('menuToggle');
+      var sidebar = document.getElementById('sidebar');
+      var backdrop = document.getElementById('backdrop');
+      var mobileNavMedia = window.matchMedia('(max-width: 960px)');
+      function setNav(open) {
+        var shouldOpen = mobileNavMedia.matches && open;
+        var shouldHide = mobileNavMedia.matches && !shouldOpen;
+        document.body.classList.toggle('nav-open', shouldOpen);
+        menuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        menuToggle.setAttribute('aria-label', shouldOpen ? '关闭章节目录' : '打开章节目录');
+        sidebar.inert = shouldHide;
+        if (shouldHide) sidebar.setAttribute('aria-hidden', 'true');
+        else sidebar.removeAttribute('aria-hidden');
+        if (shouldOpen) {
+          var firstVisible = toc.querySelector('li:not([hidden]) a');
+          if (firstVisible) firstVisible.focus();
+        }
+      }
+      menuToggle.addEventListener('click', function () { setNav(!document.body.classList.contains('nav-open')); });
+      backdrop.addEventListener('click', function () { setNav(false); menuToggle.focus(); });
+      toc.addEventListener('click', function () { if (mobileNavMedia.matches) setNav(false); });
+      if (typeof mobileNavMedia.addEventListener === 'function') mobileNavMedia.addEventListener('change', function () { setNav(false); });
+      else if (typeof mobileNavMedia.addListener === 'function') mobileNavMedia.addListener(function () { setNav(false); });
+      setNav(false);
+
+      var themeButton = document.getElementById('themeToggle');
+      function syncThemeButton() {
+        var dark = document.documentElement.dataset.theme === 'dark';
+        themeButton.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        themeButton.setAttribute('aria-label', dark ? '切换到浅色模式' : '切换到深色模式');
+      }
+      syncThemeButton();
+      themeButton.addEventListener('click', function () {
+        var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('codex-handbook-theme', next); } catch (error) { /* Storage is optional. */ }
+        syncThemeButton();
+      });
+
+      function fallbackCopy(text) {
+        var textarea = document.createElement('textarea');
+        var previouslyFocused = document.activeElement;
+        var selection = document.getSelection();
+        var ranges = [];
+        if (selection) {
+          for (var index = 0; index < selection.rangeCount; index += 1) ranges.push(selection.getRangeAt(index));
+        }
+        var scrollX = window.scrollX;
+        var scrollY = window.scrollY;
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.append(textarea);
+        textarea.select();
+        var copied = false;
+        try { copied = document.execCommand('copy'); } catch (error) { copied = false; }
+        textarea.remove();
+        if (selection) {
+          selection.removeAllRanges();
+          ranges.forEach(function (range) { selection.addRange(range); });
+        }
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') previouslyFocused.focus({ preventScroll: true });
+        window.scrollTo(scrollX, scrollY);
+        return copied;
+      }
+
+      function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text).then(function () { return true; }).catch(function () { return fallbackCopy(text); });
+        }
+        return Promise.resolve(fallbackCopy(text));
+      }
+
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-copy-code]');
+        if (!button) return;
+        var code = button.closest('.code-block').querySelector('pre code');
+        var original = button.textContent;
+        copyText(code.textContent).then(function (copied) {
+          button.textContent = copied ? '已复制' : '复制失败';
+          var status = document.getElementById('copyStatus');
+          status.textContent = copied ? '内容已复制到剪贴板' : '复制失败，请手动选择文本';
+          status.setAttribute('aria-hidden', 'false');
+          window.setTimeout(function () {
+            button.textContent = original;
+            status.setAttribute('aria-hidden', 'true');
+          }, 1600);
+        });
+      });
+
+      document.getElementById('printButton').addEventListener('click', function () { window.print(); });
+      window.addEventListener('beforeprint', function () {
+        printState = chapters.map(function (chapter) { return chapter.hidden; });
+        chapters.forEach(function (chapter) { chapter.hidden = false; });
+        document.querySelectorAll('details').forEach(function (details) {
+          details.dataset.openBeforePrint = details.open ? 'true' : 'false';
+          details.open = true;
+        });
+      });
+      window.addEventListener('afterprint', function () {
+        if (printState) chapters.forEach(function (chapter, index) { chapter.hidden = printState[index]; });
+        document.querySelectorAll('details').forEach(function (details) {
+          details.open = details.dataset.openBeforePrint === 'true';
+          delete details.dataset.openBeforePrint;
+        });
+        printState = null;
+        updateTocVisibility();
+      });
+
+      document.addEventListener('keydown', function (event) {
+        var tag = event.target.tagName;
+        var typing = tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable;
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+          event.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        } else if (event.key === '/' && !typing) {
+          event.preventDefault();
+          searchInput.focus();
+        } else if (event.key === 'Escape') {
+          if (document.body.classList.contains('nav-open')) {
+            setNav(false);
+            menuToggle.focus();
+          } else if (searchInput.value) {
+            searchInput.value = '';
+            applySearch();
+            searchInput.focus();
+          }
+        }
+      });
+
+      applySearch();
+      var initialTarget = revealHashTarget(window.location.hash);
+      if (initialTarget) initialTarget.scrollIntoView({ block: 'start' });
+    }());
+  </script>
+</body>
+</html>
